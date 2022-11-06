@@ -1,20 +1,27 @@
 import { Ray } from "../math/ray.js";
 import { LineSegment } from "../primitives/lineSegment.js";
 import { Vector2 } from "../math/vector2.js";
+import { degrees_to_radians } from "../utils.js";
 
 class Camera {
-  constructor(position, angle = 0, fov = 120, far = 1000) {
+  constructor(position, angle = 0, fov = 60, far = 1000) {
     this.position = position;
 
     this.far = far;
     this.angle = angle;
     this.fov = fov;
+
+    console.log(-(this.fov / 2) + 631);
   }
 
   castRays(level, rays) {
     //raycount is the same a resolution.
     const start = this.angle - this.fov / 2;
     const end = this.angle + this.fov / 2;
+
+    const forwardLength = rays / 2 / Math.tan(degrees_to_radians(this.fov / 2));
+
+    //console.log(forwardLength);
 
     const increment = (end - start) / rays;
 
@@ -25,13 +32,19 @@ class Camera {
     for (var i = 0; i < rays; i++) {
       const direction = start + increment * i;
 
-      const ray = new Ray(this.position, direction, this.far);
+      const direction2 = Math.atan((-rays / 2 + i) / forwardLength);
+
+      const angle = this.angle + direction2 * (180 / Math.PI);
+      // console.log(-rays / 2 + i, i);
+
+      const ray = new Ray(this.position, angle, this.far);
 
       const rayInformation = {
         origin: this.position,
         direction: direction,
         intersects: false,
         hit: undefined,
+        angle: direction2,
         distance: undefined,
         ray: ray,
         normals: [],

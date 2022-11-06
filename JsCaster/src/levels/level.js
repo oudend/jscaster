@@ -6,6 +6,18 @@ class Level {
     this.height = height;
 
     this.polygons = [];
+
+    //this.texturesLoaded = false;
+  }
+
+  get texturesLoaded() {
+    // console.log("hello");
+
+    for (var polygon of this.polygons) {
+      if (!polygon.texture.loaded) return false;
+    }
+
+    return true;
   }
 
   get center() {
@@ -18,6 +30,7 @@ class Level {
 
   addPolygon(polygon) {
     this.polygons.push(polygon);
+    return polygon;
   }
 
   addLight(light) {}

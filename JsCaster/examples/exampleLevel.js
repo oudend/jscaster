@@ -7,12 +7,15 @@ exampleLevel.addPolygon(
 );
 
 exampleLevel.addPolygon(
-  new Polygon([
-    new Vector2(100, 0),
-    new Vector2(100, 20),
-    new Vector2(400, 20),
-    new Vector2(400, 0),
-  ])
+  new Polygon(
+    [
+      new Vector2(100, 0),
+      new Vector2(100, 20),
+      new Vector2(400, 20),
+      new Vector2(400, 0),
+    ],
+    100
+  ).loadTexture("../assets/bricks.jpg")
 );
 
 export { exampleLevel };

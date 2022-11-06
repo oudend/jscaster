@@ -1,15 +1,23 @@
+import { LineSegment } from "../primitives/lineSegment.js";
+
 class TextureLoader {
   //! PREPROCESS COLUMNS FOR EXTRA SPEED MAYBE?
   //? Make sure they work first though.
-  constructor(src) {
+  constructor(src, polygon) {
     this.img = new Image();
     this.img.crossOrigin = "anonymous";
     this.src = this.img.src = src;
     this.canvas = document.createElement("canvas");
     this.ctx = this.canvas.getContext("2d");
-    this.img.addEventListener("load", onload);
+    this.img.addEventListener("load", this.onload.bind(this));
+
+    //this.segments = LineSegment.PolygonToLineSegments(polygon);
+
+    //! The TextureLoader maybe shouldn't take care of line segments and texture rendering shit, I think you should make a new class for that perhaps.
 
     this.data = null;
+
+    this.loaded = false;
   }
 
   //   get data() {
@@ -37,10 +45,14 @@ class TextureLoader {
   }
 
   onload() {
-    this.ctx.drawImage(img, 0, 0);
+    //console.log("loaded");
+
+    this.ctx.drawImage(this.img, 0, 0);
     this.img.style.display = "none";
 
     this.data = this.ctx.getImageData(0, 0, this.img.width, this.img.height);
+
+    this.loaded = true;
   }
 }
 

@@ -6,22 +6,36 @@ import {
   LevelHelper,
   RendererHelper,
 } from "../src/jscaster.js";
+
+import { degrees_to_radians } from "../src/utils.js";
+
 import { exampleLevel } from "../examples/exampleLevel.js";
 
 import Stats from "../lib/stats.module.js";
 
-const camera = new Camera(new Vector2(55, 900), -90, 70, 1000);
+console.log(exampleLevel);
 
-const renderer = new CanvasRenderer(window.innerWidth, camera, document.body);
+// while (!exampleLevel.texturesLoaded) {
+//   null;
+// }
+
+const camera = new Camera(new Vector2(200, 400), -90, 60, 1000);
+
+const renderer = new CanvasRenderer(
+  window.innerWidth,
+  500,
+  camera,
+  document.body
+);
 
 renderer.dom = document.body;
 
 // renderer.canvas.height = 500;
-// renderer.canvas.style.width = `${window.innerWidth}px`;
-// renderer.canvas.style.height = `${window.innerHeight}px`;
+renderer.canvas.style.width = `${window.innerWidth}px`;
+renderer.canvas.style.height = `${100}px`;
 
-const levelHelper = new LevelHelper(exampleLevel);
-const rendererHelper = new RendererHelper(renderer, exampleLevel);
+const levelHelper = new LevelHelper(exampleLevel, true);
+const rendererHelper = new RendererHelper(renderer, exampleLevel, true);
 
 document.body.appendChild(levelHelper.canvas);
 
@@ -36,20 +50,33 @@ document.body.appendChild(stats.dom);
 
 var FPS = 20;
 
-//requestAnimationFrame(animate);
+var direction = new Vector2(0, 0);
 
-var count = 0;
+var keys = {};
+
+//var count = 0;
+
+var speed = 0;
+
+requestAnimationFrame(animate);
 
 function animate() {
   renderer.render(exampleLevel);
 
-  camera.position.y -= 1;
+  var angle = degrees_to_radians(camera.angle);
+
+  //camera.position.add(direction);
+
+  //moveCamera();
+  moveCamera();
 
   stats.begin();
 
-  if (count++ % 20 == 0) camera.angle += 1;
+  //console.log(Vector2.fromAngle(angle));
 
-  if (camera.position.y <= 10) camera.position.y = 900;
+  //if (count % 2 ) camera.angle += 1;
+
+  //if (camera.position.y <= 10) camera.position.y = 900;
 
   //levelHelper.render();
   rendererHelper.render();
@@ -59,6 +86,78 @@ function animate() {
   requestAnimationFrame(animate);
   //setTimeout(() => requestAnimationFrame(animate), 1000 / FPS);
 }
+
+function moveCamera() {
+  Object.entries(keys).forEach(([key, value]) => {
+    //console.log(`${key}: ${value}`);
+    if (!value) return;
+
+    speed = 2;
+
+    switch (key) {
+      case "w":
+        camera.position.add(
+          Vector2.fromAngle(degrees_to_radians(camera.angle)).multiply(speed)
+        );
+        break;
+      case "s":
+        camera.position.add(
+          Vector2.fromAngle(degrees_to_radians(camera.angle - 180)).multiply(
+            speed
+          )
+        );
+        break;
+      case "a":
+        camera.position.add(
+          Vector2.fromAngle(degrees_to_radians(camera.angle - 90)).multiply(
+            speed
+          )
+        );
+        break;
+      case "d":
+        camera.position.add(
+          Vector2.fromAngle(degrees_to_radians(camera.angle + 90)).multiply(
+            speed
+          )
+        );
+        break;
+      // case "Shift":
+      //   speed = 2;
+      //   break;
+      case "ArrowRight":
+        camera.angle += 1;
+        break;
+      case "ArrowLeft":
+        camera.angle -= 1;
+        break;
+    }
+  });
+}
+
+document.addEventListener("keydown", (event) => {
+  var key = event.key;
+
+  keys[key] = true;
+});
+
+document.addEventListener("keyup", (event) => {
+  var key = event.key;
+
+  keys[key] = false;
+
+  direction = new Vector2();
+
+  // switch (key) {
+  //   case "w":
+  //   case "s":
+  //     direction.y = 0;
+  //     break;
+  //   case "a":
+  //   case "d":
+  //     direction.x = 0;
+  //     break;
+  // }
+});
 
 //! PLAN
 

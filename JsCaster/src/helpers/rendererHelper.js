@@ -2,13 +2,13 @@ import { LevelHelper } from "./levelHelper.js";
 import { Vector2 } from "../math/vector2.js";
 
 class RendererHelper {
-  constructor(renderer, level) {
+  constructor(renderer, level, autoReloadTextures) {
     this.renderer = renderer;
 
     this.camera = this.renderer.camera;
     this.level = level;
 
-    this.levelHelper = new LevelHelper(this.level);
+    this.levelHelper = new LevelHelper(this.level, autoReloadTextures);
 
     this.canvas = document.createElement("canvas");
     this.ctx = this.canvas.getContext("2d");
@@ -19,10 +19,11 @@ class RendererHelper {
     this.canvas.height = this.level.height;
 
     document.body.appendChild(this.canvas); //! DEBUG ONLY
+
+    this.levelHelper.render();
   }
 
   render() {
-    this.levelHelper.render();
     this.ctx.drawImage(this.levelHelper.canvas, 0, 0);
 
     this.ctx.fillStyle = "orange";
@@ -106,6 +107,14 @@ class RendererHelper {
       this.ctx.moveTo(start.x, start.y);
       this.ctx.lineTo(end.x, end.y);
       this.ctx.stroke();
+    }
+
+    this.ctx.fillStyle = "blue";
+    for (let point of this.renderer.debugPoints) {
+      this.ctx.moveTo(point.x, point.y);
+      this.ctx.beginPath();
+      this.ctx.arc(point.x, point.y, 2, 0, 2 * Math.PI);
+      this.ctx.fill();
     }
 
     // const start = this.camera.angle - this.camera.fov / 2;

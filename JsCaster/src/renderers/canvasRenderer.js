@@ -1,21 +1,41 @@
 import { Vector2 } from "../math/vector2.js";
+import { degrees_to_radians } from "../utils.js";
 
 class CanvasRenderer {
-  constructor(resolution = 100, camera) {
-    this.resolution = resolution;
+  constructor(width = 100, height = 100, camera) {
+    this.resolution = width;
     this.camera = camera;
+
+    this.height = height;
 
     this.canvas = document.createElement("canvas");
     this.ctx = this.canvas.getContext("2d");
 
     this.ctx.imageSmoothingEnabled = false;
 
-    this.canvas.width = resolution;
+    this.canvas.width = this.resolution;
+    this.canvas.height = this.height;
 
     this.floor = "grey";
     this.background = "orange";
 
     this.rays = null;
+
+    this.columnAngle = camera.fov / this.resolution;
+
+    this.debugPoints = [];
+
+    this.distanceToProjectionPlane =
+      this.resolution / 2 / Math.tan(degrees_to_radians(this.camera.fov / 2));
+
+    this.angleBetweenRays = this.camera.fov / this.resolution;
+
+    console.log(
+      this.distanceToProjectionPlane,
+      this.angleBetweenRays,
+      this.resolution,
+      "?"
+    );
 
     // domElement.appendChild(this.canvas);
   }
@@ -54,6 +74,8 @@ class CanvasRenderer {
   render(level) {
     const rays = this.camera.castRays(level, this.resolution);
 
+    this.debugPoints = [];
+
     this.rays = rays;
 
     //console.log(rays);
@@ -63,20 +85,26 @@ class CanvasRenderer {
     for (var i = 0; i < /*this.resolution*/ rays.length; i += 1) {
       const ray = rays[i]; //TODO: this kind of information should ideally be returned by ray.js and just added by camera.js
 
-      const x = ray.x;
-
       if (!ray.intersects) continue;
 
-      const distance = ray.distance;
+      const polygon = ray.polygon;
 
-      const distanceFactor = distance / this.camera.far;
+      const x = ray.x;
+
+      //var BETA = ray.angle; // - this.camera.fov / 2; //this.camera.fov / 2;
+
+      const distance = ray.distance; //  * degrees_to_radians(BETA); //ray.distance;
+
+      const wallHeight =
+        (polygon.height / distance / Math.cos(ray.angle)) *
+        this.distanceToProjectionPlane;
+
+      // const wallHeight =
+      //   (polygon.height * this.distanceToProjectionPlane) / distance;
+
+      // const distanceFactor = distance / this.camera.far;
 
       const normal1 = ray.normals[0];
-
-      // console.log(normal1.angle);
-      // return;
-
-      const directionVector = Vector2.fromAngle(ray.direction);
 
       const lightIntensity = 0.5;
 
@@ -87,58 +115,21 @@ class CanvasRenderer {
       const intensity =
         (objectIntensity / distance) * multiplier + lightInfluence;
 
-      const polygon = ray.polygon;
-
       const texture = polygon.texture;
 
-      //console.log(texture);
+      // const wallHeight =
+      //   this.canvas.height - this.canvas.height * distanceFactor;
 
-      //console.log(ray);
-
-      // console.log(normal1, directionVector, dotProduct);
-      // return;
-
-      // console.log(
-      //   this.canvas.height * (1 - distanceFactor),
-      //   this.canvas.height,
-      //   distanceFactor ** 2,
-      //   distanceFactor
-      // );
-      // return;
-
-      //console.log(distanceFactor);
-
-      //console.log(distance, this.camera, 1 - distance / this.camera.far);
-      //return;
-
-      // console.log(ray, x);
-      // return;
-
-      const wallHeight =
-        this.canvas.height - this.canvas.height * distanceFactor;
-
-      //const colorModifier = Math.cos(1 + distanceFactor ** 2);
-
-      // console.log(colorModifier);
-      // return;
-
-      //const color = [0, 150, 0];
       const color = [100, 100, 100];
 
       color[0] -= intensity;
       color[1] -= intensity;
       color[2] -= intensity;
 
-      // color[0] /= lightInfluence;
-      // color[1] /= lightInfluence;
-      // color[2] /= lightInfluence;
-
-      //console.log(distanceFactor);
-
       this.ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
       this.ctx.fillRect(
         x,
-        this.canvas.height / 2 - wallHeight / 2,
+        this.height / 2 - wallHeight / 2,
         1,
         wallHeight //this.canvas.height - this.canvas.height * distanceFactor * 2
       );
