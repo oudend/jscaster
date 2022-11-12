@@ -14,6 +14,7 @@ class Level {
     // console.log("hello");
 
     for (var polygon of this.polygons) {
+      if (!polygon.texture) continue;
       if (!polygon.texture.loaded) return false;
     }
 

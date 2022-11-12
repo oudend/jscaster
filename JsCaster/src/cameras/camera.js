@@ -11,10 +11,10 @@ class Camera {
     this.angle = angle;
     this.fov = fov;
 
-    console.log(-(this.fov / 2) + 631);
+    //console.log(-(this.fov / 2) + 631);
   }
 
-  castRays(level, rays) {
+  castRays(level, rays, onrayhit) {
     //raycount is the same a resolution.
     const start = this.angle - this.fov / 2;
     const end = this.angle + this.fov / 2;
@@ -57,9 +57,11 @@ class Camera {
 
       if (polygons.length === 0) continue;
 
+      var closestHitDistance = Infinity;
+
       for (var j = 0; j < polygons.length; j++) {
         const polygon = polygons[j];
-        const lineSegments = LineSegment.PolygonToLineSegments(polygon);
+        const lineSegments = polygon.segments;
 
         //return [];
 
@@ -79,6 +81,8 @@ class Camera {
           if (distance > rayInformation.distance && rayInformation.intersects)
             continue;
 
+          if (distance > closestHitDistance) break;
+
           rayInformation.polygon = polygon;
           rayInformation.lineSegment = lineSegment;
 
@@ -86,12 +90,25 @@ class Camera {
           rayInformation.hit = intersection.point;
           rayInformation.distance = distance;
           rayInformation.normals = intersection.normals; // a line segment has two sides and therefore two normals pointing in opposite directions
+
+          closestHitDistance = distance;
+
+          //if (onrayhit) onrayhit(level, rayInformation);
+
+          //break;
         }
+
+        //if (rayInformation.intersects) rayHits.push(rayInformation);
 
         //return rayHits;
       }
 
-      if (rayInformation.intersects) rayHits.push(rayInformation);
+      if (rayInformation.intersects) {
+        if (onrayhit) onrayhit(level, rayInformation);
+        rayHits.push(rayInformation);
+      }
+
+      //if (rayInformation.intersects) rayHits.push(rayInformation);
     }
 
     return rayHits;

@@ -2,6 +2,7 @@ import { Vector2 } from "../math/vector2.js";
 import { degrees_to_radians } from "../utils.js";
 
 class CanvasRenderer {
+  //? no texture support.
   constructor(width = 100, height = 100, camera) {
     this.resolution = width;
     this.camera = camera;
@@ -30,12 +31,12 @@ class CanvasRenderer {
 
     this.angleBetweenRays = this.camera.fov / this.resolution;
 
-    console.log(
-      this.distanceToProjectionPlane,
-      this.angleBetweenRays,
-      this.resolution,
-      "?"
-    );
+    // console.log(
+    //   this.distanceToProjectionPlane,
+    //   this.angleBetweenRays,
+    //   this.resolution,
+    //   "?"
+    // );
 
     // domElement.appendChild(this.canvas);
   }
@@ -71,76 +72,120 @@ class CanvasRenderer {
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height / 2);
   }
 
-  render(level) {
-    const rays = this.camera.castRays(level, this.resolution);
+  #render(level, ray) {
+    //const ray = rays[i]; //TODO: this kind of information should ideally be returned by ray.js and just added by camera.js
 
-    this.debugPoints = [];
+    //console.log(ray.lineSegment)
 
-    this.rays = rays;
+    // return;
 
-    //console.log(rays);
+    if (!ray.intersects) return; //contingency
 
-    this.#drawBase();
+    const polygon = ray.polygon;
 
-    for (var i = 0; i < /*this.resolution*/ rays.length; i += 1) {
-      const ray = rays[i]; //TODO: this kind of information should ideally be returned by ray.js and just added by camera.js
+    const x = ray.x;
 
-      if (!ray.intersects) continue;
+    //var BETA = ray.angle; // - this.camera.fov / 2; //this.camera.fov / 2;
 
-      const polygon = ray.polygon;
+    const distance = ray.distance; //  * degrees_to_radians(BETA); //ray.distance;
 
-      const x = ray.x;
+    const wallHeight =
+      (polygon.height / distance / Math.cos(ray.angle)) *
+      this.distanceToProjectionPlane;
 
-      //var BETA = ray.angle; // - this.camera.fov / 2; //this.camera.fov / 2;
+    // const wallHeight =
+    //   (polygon.height * this.distanceToProjectionPlane) / distance;
 
-      const distance = ray.distance; //  * degrees_to_radians(BETA); //ray.distance;
+    // const distanceFactor = distance / this.camera.far;
 
-      const wallHeight =
-        (polygon.height / distance / Math.cos(ray.angle)) *
-        this.distanceToProjectionPlane;
+    const normal1 = ray.normals[0];
 
-      // const wallHeight =
-      //   (polygon.height * this.distanceToProjectionPlane) / distance;
+    const lightIntensity = 0.5;
 
-      // const distanceFactor = distance / this.camera.far;
+    const lightInfluence = Math.abs(normal1.angle - 90) * lightIntensity;
 
-      const normal1 = ray.normals[0];
+    const objectIntensity = 1;
+    const multiplier = 0.1;
+    const intensity =
+      (objectIntensity / distance) * multiplier + lightInfluence;
 
-      const lightIntensity = 0.5;
+    if (polygon.texture && polygon.texture.loaded) {
+      var point = Math.floor(Vector2.distance(ray.lineSegment.start, ray.hit));
 
-      const lightInfluence = Math.abs(normal1.angle - 90) * lightIntensity;
+      const texture = polygon.texture.textureImage;
 
-      const objectIntensity = 1;
-      const multiplier = 0.1;
-      const intensity =
-        (objectIntensity / distance) * multiplier + lightInfluence;
+      if (polygon.texture.wrap) {
+        const offset =
+          ray.lineSegment.index > 0
+            ? polygon.segmentOffsets[ray.lineSegment.index - 1]
+            : 0;
 
-      const texture = polygon.texture;
+        point = offset + point;
+      }
 
-      // const wallHeight =
-      //   this.canvas.height - this.canvas.height * distanceFactor;
+      var textureX = point;
 
-      const color = [100, 100, 100];
+      var textureHeight = polygon.height;
 
-      color[0] -= intensity;
-      color[1] -= intensity;
-      color[2] -= intensity;
+      if (polygon.texture.scaleToFit) {
+        const length = polygon.texture.wrap
+          ? polygon.totalLength
+          : ray.lineSegment.length;
 
-      this.ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
-      this.ctx.fillRect(
+        textureX = (texture.width / length) * point;
+        textureHeight = texture.height;
+      }
+
+      this.ctx.drawImage(
+        texture,
+        textureX,
+        0,
+        1,
+        textureHeight,
         x,
         this.height / 2 - wallHeight / 2,
         1,
-        wallHeight //this.canvas.height - this.canvas.height * distanceFactor * 2
+        wallHeight
       );
 
-      // console.log(ray);
-      // return;
+      // this.ctx.fillStyle = `rgba(0, 0, 0, ${intensity / 255})`;
+      // this.ctx.fillRect(
+      //   x,
+      //   this.height / 2 - wallHeight / 2,
+      //   1,
+      //   wallHeight //this.canvas.height - this.canvas.height * distanceFactor * 2
+      // );
+
+      return;
     }
 
-    //console.log(rays);
+    const color = [100, 100, 100];
 
-    //shoot (resolution) amount of rays.
+    color[0] -= intensity;
+    color[1] -= intensity;
+    color[2] -= intensity;
+
+    this.ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+    this.ctx.fillRect(
+      x,
+      this.height / 2 - wallHeight / 2,
+      1,
+      wallHeight //this.canvas.height - this.canvas.height * distanceFactor * 2
+    );
+  }
+
+  render(level) {
+    this.#drawBase();
+
+    this.textureWraps = {};
+
+    const rays = this.camera.castRays(
+      level,
+      this.resolution,
+      this.#render.bind(this)
+    );
+
+    this.rays = rays;
   }
 }
 

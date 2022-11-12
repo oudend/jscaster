@@ -36,11 +36,14 @@ class LevelHelper {
     this.ctx.strokeStyle = "black";
 
     if (polygon.texture && polygon.texture.loaded) {
-      console.log("drawing texture");
+      //console.log("drawing texture");
 
       //polygon.texture.img.re
 
-      var pattern = this.ctx.createPattern(polygon.texture.img, "repeat");
+      var pattern = this.ctx.createPattern(
+        polygon.texture.textureImage,
+        "repeat"
+      );
       pattern.setTransform({ a: 0.25, d: 0.25 });
       this.ctx.fillStyle = pattern;
       //this.ctx.fill();

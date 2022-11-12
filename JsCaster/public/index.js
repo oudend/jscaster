@@ -19,20 +19,18 @@ console.log(exampleLevel);
 //   null;
 // }
 
-const camera = new Camera(new Vector2(200, 400), -90, 60, 1000);
+const camera = new Camera(new Vector2(200, 400), -90, 70, 10000);
 
-const renderer = new CanvasRenderer(
-  window.innerWidth,
-  500,
-  camera,
-  document.body
-);
+const renderer = new CanvasRenderer(500, 500, camera, document.body);
+
+renderer.canvas.style.width = `${window.innerWidth}px`;
+renderer.canvas.style.height = `${window.innerHeight}px`;
 
 renderer.dom = document.body;
 
 // renderer.canvas.height = 500;
-renderer.canvas.style.width = `${window.innerWidth}px`;
-renderer.canvas.style.height = `${100}px`;
+// renderer.canvas.style.width = `${window.innerWidth}px`;
+// renderer.canvas.style.height = `${200}px`;
 
 const levelHelper = new LevelHelper(exampleLevel, true);
 const rendererHelper = new RendererHelper(renderer, exampleLevel, true);
@@ -49,6 +47,7 @@ stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
 document.body.appendChild(stats.dom);
 
 var FPS = 20;
+var turnSpeed = 2;
 
 var direction = new Vector2(0, 0);
 
@@ -125,10 +124,10 @@ function moveCamera() {
       //   speed = 2;
       //   break;
       case "ArrowRight":
-        camera.angle += 1;
+        camera.angle += turnSpeed;
         break;
       case "ArrowLeft":
-        camera.angle -= 1;
+        camera.angle -= turnSpeed;
         break;
     }
   });
