@@ -7,7 +7,7 @@ class Level {
 
     this.polygons = [];
 
-    //this.texturesLoaded = false;
+    this.lights = [];
   }
 
   get texturesLoaded() {
@@ -34,7 +34,9 @@ class Level {
     return polygon;
   }
 
-  addLight(light) {}
+  addLight(light) {
+    this.lights.push(light);
+  }
 }
 
 export { Level };

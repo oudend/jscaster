@@ -6,7 +6,8 @@ import { imagedata_to_image } from "../utils.js";
 class TextureLoader {
   constructor(
     src,
-    polygon,
+    // polygon,
+    transparent = false,
     scaleToFit = true,
     wrap = false,
     repeat = "no-repeat",
@@ -17,7 +18,9 @@ class TextureLoader {
     this.src = src;
     this.scaleToFit = scaleToFit;
     this.wrap = wrap;
-    this.polygon = polygon;
+    // this.polygon = polygon;
+
+    this.transparent = transparent;
 
     this.textureImage = undefined;
     this.texture = new Texture(

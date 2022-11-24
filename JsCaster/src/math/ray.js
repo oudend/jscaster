@@ -16,18 +16,14 @@ class Ray {
 
     const end = new Vector2(endx, endy);
 
-    //fancy method to add angle to vector with length?
     this.lineSegment = new LineSegment(origin, end);
   }
 
   intersects(lineSegment) {
-    //TODO: Get normal vector of hit
-    //! verify math
-
     const intersectionInformation = {
       intersects: false,
       point: undefined,
-      normals: [], //TODO: implement it!
+      normal: undefined,
     };
 
     const denom =
@@ -63,34 +59,30 @@ class Ray {
 
     //https://stackoverflow.com/questions/1243614/how-do-i-calculate-the-normal-vector-of-a-line-segment
 
-    //! The direction should be relative to the generally set direction, how does that work? no clue. Try and debug it with the rendererHelper maybe?
-
-    const dx = lineSegment.end.x - lineSegment.start.x;
-    const dy = lineSegment.end.y - lineSegment.start.y;
+    // const dx = lineSegment.end.x - lineSegment.start.x;
+    // const dy = lineSegment.end.y - lineSegment.start.y;
 
     //(-dy, dx) and (dy, -dx)
 
-    const normal1 = new Vector2(-dy, dx);
-    const normal2 = new Vector2(dy, -dx);
+    const normal1 = new Vector2(-lineSegment.dy, lineSegment.dx);
+    const normal2 = new Vector2(lineSegment.dy, -lineSegment.dx);
 
-    intersectionInformation.normals = [normal1, normal2];
+    var normal = normal1;
 
-    // if (intersectionInformation.intersects) {
-    //   //! debugging
+    if (
+      Math.abs(normal1.degrees + this.angle) >
+      Math.abs(normal2.degrees + this.angle)
+    ) {
+      normal = normal2;
+    }
 
-    //   var angle1 = Vector2.angle(lineSegment.center, normal1);
-    //   var angle2 = Vector2.angle(lineSegment.center, normal2);
+    intersectionInformation.normal = normal; //[normal1, normal2];
 
-    //   console.log(
-    //     normal1,
-    //     normal2,
-    //     angle1,
-    //     angle2,
-    //     this.angle,
-    //     normal1.angle,
-    //     normal2.angle
-    //   );
-    // }
+    // console.log(
+    //   Math.abs(normal1.degrees - this.angle),
+    //   Math.abs(normal2.degrees - this.angle)
+    // );
+    // throw new Error("herror");
 
     return intersectionInformation;
   }

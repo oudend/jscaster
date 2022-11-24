@@ -13,24 +13,18 @@ import { exampleLevel } from "../examples/exampleLevel.js";
 
 import Stats from "../lib/stats.module.js";
 
-console.log(exampleLevel);
+const camera = new Camera(new Vector2(200, 400), 270, 70, 10000);
 
-// while (!exampleLevel.texturesLoaded) {
-//   null;
-// }
+const renderer = new CanvasRenderer(300, 300, camera, document.body);
 
-const camera = new Camera(new Vector2(200, 400), -90, 70, 10000);
-
-const renderer = new CanvasRenderer(500, 500, camera, document.body);
-
-renderer.canvas.style.width = `${window.innerWidth}px`;
-renderer.canvas.style.height = `${window.innerHeight}px`;
+renderer.canvas.style.width = `${200}px`;
+renderer.canvas.style.height = `${300}px`;
 
 renderer.dom = document.body;
 
 // renderer.canvas.height = 500;
-// renderer.canvas.style.width = `${window.innerWidth}px`;
-// renderer.canvas.style.height = `${200}px`;
+renderer.canvas.style.width = `${window.innerWidth}px`;
+renderer.canvas.style.height = `${window.innerHeight}px`;
 
 const levelHelper = new LevelHelper(exampleLevel, true);
 const rendererHelper = new RendererHelper(renderer, exampleLevel, true);
@@ -39,17 +33,16 @@ document.body.appendChild(levelHelper.canvas);
 
 renderer.render(exampleLevel);
 
-levelHelper.render();
+// levelHelper.render();
 rendererHelper.render();
+
+rendererHelper.canvas.classList.add("minimap");
 
 var stats = new Stats();
 stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
 document.body.appendChild(stats.dom);
 
-var FPS = 20;
 var turnSpeed = 2;
-
-var direction = new Vector2(0, 0);
 
 var keys = {};
 
@@ -62,33 +55,16 @@ requestAnimationFrame(animate);
 function animate() {
   renderer.render(exampleLevel);
 
-  var angle = degrees_to_radians(camera.angle);
-
-  //camera.position.add(direction);
-
-  //moveCamera();
   moveCamera();
-
   stats.begin();
-
-  //console.log(Vector2.fromAngle(angle));
-
-  //if (count % 2 ) camera.angle += 1;
-
-  //if (camera.position.y <= 10) camera.position.y = 900;
-
-  //levelHelper.render();
   rendererHelper.render();
-
   stats.end();
 
   requestAnimationFrame(animate);
-  //setTimeout(() => requestAnimationFrame(animate), 1000 / FPS);
 }
 
 function moveCamera() {
   Object.entries(keys).forEach(([key, value]) => {
-    //console.log(`${key}: ${value}`);
     if (!value) return;
 
     speed = 2;
@@ -120,16 +96,22 @@ function moveCamera() {
           )
         );
         break;
-      // case "Shift":
-      //   speed = 2;
-      //   break;
       case "ArrowRight":
         camera.angle += turnSpeed;
         break;
       case "ArrowLeft":
         camera.angle -= turnSpeed;
+        if (camera.angle < 0) camera.angle = 359;
+        break;
+      case "ArrowUp":
+        camera.verticalAngle += turnSpeed * 4;
+        break;
+      case "ArrowDown":
+        camera.verticalAngle -= turnSpeed * 4;
         break;
     }
+
+    camera.angle = camera.angle % 360;
   });
 }
 
@@ -143,19 +125,6 @@ document.addEventListener("keyup", (event) => {
   var key = event.key;
 
   keys[key] = false;
-
-  direction = new Vector2();
-
-  // switch (key) {
-  //   case "w":
-  //   case "s":
-  //     direction.y = 0;
-  //     break;
-  //   case "a":
-  //   case "d":
-  //     direction.x = 0;
-  //     break;
-  // }
 });
 
 //! PLAN
@@ -170,6 +139,7 @@ document.addEventListener("keyup", (event) => {
 
 //1. Make sure to only pass intersecting rays to the renderer so it doesn't have to sort through them all on its own.
 //2. Prebaked lighting so the normal of a surface will influence the light based on a light direction (dot product again).
+//3. Rename camera.verticalAngle as it is missleading and not really an angle
 
 //! FUTURE IDEAS
 

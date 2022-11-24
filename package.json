@@ -1,0 +1,23 @@
+{
+  "name": "raycaster",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oudend/jscaster.git"
+  },
+  "author": "oudend",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/oudend/jscaster/issues"
+  },
+  "homepage": "https://github.com/oudend/jscaster#readme",
+  "devDependencies": {
+    "eslint": "^8.28.0",
+    "eslint-config-google": "^0.14.0"
+  }
+}

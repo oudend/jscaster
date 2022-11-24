@@ -9,10 +9,14 @@ class Vector2 {
     this.isVector2 = true;
   }
 
-  get angle() {
+  get degrees() {
     var angle = Math.atan2(this.y, this.x);
     var degrees = (180 * angle) / Math.PI;
     return (360 + Math.round(degrees)) % 360;
+  }
+
+  get radians() {
+    return Math.atan2(this.y, this.x);
   }
 
   add(v) {

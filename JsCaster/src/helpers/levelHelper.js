@@ -1,4 +1,5 @@
 class LevelHelper {
+  //TODO: Support sprites.
   constructor(level, autoReload = false) {
     this.level = level;
 
@@ -29,6 +30,18 @@ class LevelHelper {
   //   render();
   // }
 
+  #drawLight(light) {
+    this.ctx.fillStyle = light.color ?? "yellow";
+
+    switch (light.type) {
+      case "Point":
+        //draw its radius.
+        break;
+      case "Directional":
+        break;
+    }
+  }
+
   #drawPolygon(polygon) {
     //console.log(polygon);
 
@@ -36,10 +49,6 @@ class LevelHelper {
     this.ctx.strokeStyle = "black";
 
     if (polygon.texture && polygon.texture.loaded) {
-      //console.log("drawing texture");
-
-      //polygon.texture.img.re
-
       var pattern = this.ctx.createPattern(
         polygon.texture.textureImage,
         "repeat"
@@ -73,6 +82,12 @@ class LevelHelper {
       const polygon = this.level.polygons[i];
 
       this.#drawPolygon(polygon);
+    }
+
+    for (var i = 0; i < this.level.lights.length; i++) {
+      const light = this.level.lights[i];
+
+      this.#drawLight(light);
     }
   }
 } //should be able to render a level to a canvas

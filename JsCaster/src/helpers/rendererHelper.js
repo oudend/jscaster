@@ -41,14 +41,11 @@ class RendererHelper {
 
     const cameraRadians = this.camera.angle * (Math.PI / 180);
 
-    const cameraLeftBoundaryRadians =
+    const cameraLeftBoundaryRadians = //TODO
       (this.camera.angle - this.camera.fov / 2) * (Math.PI / 180);
 
     const cameraRightBoundaryRadians =
       (this.camera.angle + this.camera.fov / 2) * (Math.PI / 180);
-
-    // console.log(cameraLeftBoundaryRadians);
-    // return;
 
     const forwardVector = Vector2.multiply(
       Vector2.fromAngle(cameraRadians),
@@ -65,6 +62,8 @@ class RendererHelper {
       new Vector2(this.camera.far, this.camera.far)
     );
 
+    //console.log(cameraRightBoundaryRadians)
+
     // console.log(radians);
     // return;
 
@@ -79,14 +78,16 @@ class RendererHelper {
     this.ctx.lineTo(finalVector.x, finalVector.y);
     this.ctx.stroke();
 
-    this.ctx.beginPath();
     this.ctx.strokeStyle = "green";
+    this.ctx.beginPath();
     this.ctx.moveTo(this.camera.position.x, this.camera.position.y);
     this.ctx.lineTo(finalVector2.x, finalVector2.y);
 
     this.ctx.moveTo(this.camera.position.x, this.camera.position.y);
     this.ctx.lineTo(finalVector3.x, finalVector3.y);
     this.ctx.stroke();
+
+    //console.log(finalVector3)
 
     //console.log(facingVector);
     //Draw Camera
@@ -107,14 +108,6 @@ class RendererHelper {
       this.ctx.moveTo(start.x, start.y);
       this.ctx.lineTo(end.x, end.y);
       this.ctx.stroke();
-    }
-
-    this.ctx.fillStyle = "blue";
-    for (let point of this.renderer.debugPoints) {
-      this.ctx.moveTo(point.x, point.y);
-      this.ctx.beginPath();
-      this.ctx.arc(point.x, point.y, 2, 0, 2 * Math.PI);
-      this.ctx.fill();
     }
 
     // const start = this.camera.angle - this.camera.fov / 2;

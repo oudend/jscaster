@@ -1,5 +1,6 @@
 import { TextureLoader } from "../loaders/textureLoader.js";
 import { Vector2 } from "../math/vector2.js";
+import { Color } from "./color.js";
 import { LineSegment } from "./lineSegment.js";
 class Polygon {
   constructor(points, height = 100) {
@@ -12,13 +13,9 @@ class Polygon {
 
     this.height = height; //In the future maybe add support for height to each point so when computing the height will be blended between them.
 
-    this.color = "red";
+    this.color = new Color(100, 100, 100);
 
-    this.textureLoader = undefined; //new TextureLoader("../assets/bricks.jpg");
-
-    // this.totalLength = this.segments.reduce(function (accumulator, segment) {
-    //   return accumulator + segment.length;
-    // }, 0);
+    this.textureLoader = undefined;
 
     this.segmentOffsets = [];
 
@@ -39,25 +36,8 @@ class Polygon {
   //   }, 0);
   // }
 
-  loadTexture(
-    src,
-    scaleToFit = true,
-    wrap = false,
-    repeat = "no-repeat",
-    scale = new Vector2(1, 1),
-    transform = new Vector2(0, 0),
-    angle = 0
-  ) {
-    this.textureLoader = new TextureLoader(
-      src,
-      this,
-      scaleToFit,
-      wrap,
-      repeat,
-      scale,
-      transform,
-      angle
-    );
+  setTextureLoader(textureLoader) {
+    this.textureLoader = textureLoader;
     return this;
   }
 
@@ -85,6 +65,17 @@ Polygon.circle = function (center, radius = 60, edges = 5) {
     let y = center.y + radius * Math.sin(i * n_angles);
     points.push(new Vector2(x, y));
   }
+
+  return new Polygon(points);
+};
+
+Polygon.square = function (center, radius) {
+  var points = [];
+
+  points.push(new Vector2(center.x - radius, center.y + radius));
+  points.push(new Vector2(center.x - radius, center.y - radius));
+  points.push(new Vector2(center.x + radius, center.y - radius));
+  points.push(new Vector2(center.x + radius, center.y + radius));
 
   return new Polygon(points);
 };

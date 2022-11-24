@@ -3,6 +3,15 @@ function degrees_to_radians(degrees) {
   return degrees * (pi / 180);
 }
 
+function normalizeRadian(a) {
+  var circle = Math.PI * 2;
+  a = a % circle;
+  if (a < 0) {
+    a += circle;
+  }
+  return a;
+}
+
 function imagedata_to_image(imagedata) {
   var canvas = document.createElement("canvas");
   var ctx = canvas.getContext("2d");
@@ -15,4 +24,4 @@ function imagedata_to_image(imagedata) {
   return image;
 }
 
-export { degrees_to_radians, imagedata_to_image };
+export { degrees_to_radians, imagedata_to_image, normalizeRadian };

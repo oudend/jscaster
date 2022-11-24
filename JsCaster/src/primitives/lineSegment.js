@@ -10,6 +10,9 @@ class LineSegment {
       this.start,
       Vector2.divide(Vector2.subtract(this.end, this.start), new Vector2(2, 2))
     );
+
+    this.dx = this.end.x - this.start.x;
+    this.dy = this.end.y - this.start.y;
   }
 
   get length() {

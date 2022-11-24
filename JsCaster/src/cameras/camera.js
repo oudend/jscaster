@@ -4,14 +4,19 @@ import { Vector2 } from "../math/vector2.js";
 import { degrees_to_radians } from "../utils.js";
 
 class Camera {
-  constructor(position, angle = 0, fov = 60, far = 1000) {
+  constructor(
+    position,
+    angle = 90, //TODO! switch to radians
+    //verticalAngle = 0, //? remove. verticalOffset in renderer instead?
+    fov = 60,
+    far = 1000
+  ) {
     this.position = position;
 
     this.far = far;
     this.angle = angle;
+    this.verticalAngle = 0; //verticalAngle;
     this.fov = fov;
-
-    //console.log(-(this.fov / 2) + 631);
   }
 
   castRays(level, rays, onrayhit) {
@@ -20,8 +25,6 @@ class Camera {
     const end = this.angle + this.fov / 2;
 
     const forwardLength = rays / 2 / Math.tan(degrees_to_radians(this.fov / 2));
-
-    //console.log(forwardLength);
 
     const increment = (end - start) / rays;
 
@@ -35,11 +38,10 @@ class Camera {
       const direction2 = Math.atan((-rays / 2 + i) / forwardLength);
 
       const angle = this.angle + direction2 * (180 / Math.PI);
-      // console.log(-rays / 2 + i, i);
 
       const ray = new Ray(this.position, angle, this.far);
 
-      const rayInformation = {
+      var rayInformation = {
         origin: this.position,
         direction: direction,
         intersects: false,
@@ -53,15 +55,20 @@ class Camera {
         x: i,
       };
 
-      //rayHits[i] = rayInformation;
-
-      if (polygons.length === 0) continue;
+      if (polygons.length === 0) break; //! test
 
       var closestHitDistance = Infinity;
+
+      var transparencyData = [];
+      var heightCandidates = [];
+      var heightSort = false;
 
       for (var j = 0; j < polygons.length; j++) {
         const polygon = polygons[j];
         const lineSegments = polygon.segments;
+
+        if (polygon.height != polygons[Math.max(0, j - 1)].height)
+          heightSort = true;
 
         //return [];
 
@@ -70,32 +77,35 @@ class Camera {
 
           const intersection = ray.intersects(lineSegment);
 
-          if (!intersection.intersects) {
-            //! rayInformation.intersects = false; //IMPORTANT AS FUCK MAYBE?
-            //rayHits[i] = rayInformation;
-            continue;
-          }
+          if (!intersection.intersects) continue;
 
           const distance = Vector2.distance(intersection.point, this.position);
+
+          const lineSegmentRayInformation = {
+            origin: this.position,
+            direction: direction,
+            intersects: true,
+            hit: intersection.point,
+            angle: direction2,
+            distance: distance,
+            ray: ray,
+            normal: intersection.normal,
+            polygon: polygon,
+            lineSegment: lineSegment,
+            x: i,
+          };
+
+          transparencyData.push(lineSegmentRayInformation);
+          heightCandidates.push(lineSegmentRayInformation);
 
           if (distance > rayInformation.distance && rayInformation.intersects)
             continue;
 
           if (distance > closestHitDistance) break;
 
-          rayInformation.polygon = polygon;
-          rayInformation.lineSegment = lineSegment;
-
-          rayInformation.intersects = true;
-          rayInformation.hit = intersection.point;
-          rayInformation.distance = distance;
-          rayInformation.normals = intersection.normals; // a line segment has two sides and therefore two normals pointing in opposite directions
+          rayInformation = lineSegmentRayInformation;
 
           closestHitDistance = distance;
-
-          //if (onrayhit) onrayhit(level, rayInformation);
-
-          //break;
         }
 
         //if (rayInformation.intersects) rayHits.push(rayInformation);
@@ -104,11 +114,43 @@ class Camera {
       }
 
       if (rayInformation.intersects) {
-        if (onrayhit) onrayhit(level, rayInformation);
-        rayHits.push(rayInformation);
-      }
+        if (rayInformation.polygon.texture.transparent) {
+          const transparentPass = transparencyData.sort(
+            (a, b) => b.distance - a.distance
+          );
 
-      //if (rayInformation.intersects) rayHits.push(rayInformation);
+          for (var j = 0; j < transparentPass.length; j++) {
+            var pass = transparentPass[j];
+
+            if (onrayhit) onrayhit(level, pass);
+            rayHits.push(pass);
+          }
+        } else if (heightSort) {
+          const heightPrePass = heightCandidates.sort(
+            (a, b) => a.distance - b.distance
+          );
+
+          const heightPass = [heightPrePass[0]];
+
+          for (var j = 1; j < heightPrePass.length; j++) {
+            if (
+              heightPrePass[j].polygon.height >
+              heightPass[heightPass.length - 1].polygon.height
+            )
+              heightPass.push(heightPrePass[j]);
+          }
+
+          for (var j = heightPass.length - 1; j > -1; j--) {
+            var pass = heightPass[j];
+
+            if (onrayhit) onrayhit(level, pass);
+            rayHits.push(pass);
+          }
+        } else {
+          if (onrayhit) onrayhit(level, rayInformation);
+          rayHits.push(rayInformation);
+        }
+      }
     }
 
     return rayHits;
