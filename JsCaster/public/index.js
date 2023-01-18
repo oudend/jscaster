@@ -13,7 +13,7 @@ import { exampleLevel } from "../examples/exampleLevel.js";
 
 import Stats from "../lib/stats.module.js";
 
-const camera = new Camera(new Vector2(200, 400), 270, 70, 10000);
+const camera = new Camera(new Vector2(200, 400), 270, 70, 1000);
 
 const renderer = new CanvasRenderer(300, 300, camera, document.body);
 
@@ -108,6 +108,12 @@ function moveCamera() {
         break;
       case "ArrowDown":
         camera.verticalAngle -= turnSpeed * 4;
+        break;
+      case "g":
+        renderer.floorOffset -= 2;
+        break;
+      case "t":
+        renderer.floorOffset += 2;
         break;
     }
 

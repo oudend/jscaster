@@ -13,7 +13,7 @@ class Polygon {
 
     this.height = height; //In the future maybe add support for height to each point so when computing the height will be blended between them.
 
-    this.color = new Color(100, 100, 100);
+    this.color = new Color(0, 0, 200);
 
     this.textureLoader = undefined;
 

@@ -12,6 +12,14 @@ function normalizeRadian(a) {
   return a;
 }
 
+function synchronousSleep(ms) {
+  const start = Date.now();
+  let now = start;
+  while (now - start < ms) {
+    now = Date.now();
+  }
+}
+
 function imagedata_to_image(imagedata) {
   var canvas = document.createElement("canvas");
   var ctx = canvas.getContext("2d");
@@ -24,4 +32,4 @@ function imagedata_to_image(imagedata) {
   return image;
 }
 
-export { degrees_to_radians, imagedata_to_image, normalizeRadian };
+export { degrees_to_radians, imagedata_to_image, normalizeRadian, synchronousSleep };

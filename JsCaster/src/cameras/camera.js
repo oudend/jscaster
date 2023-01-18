@@ -8,18 +8,20 @@ class Camera {
     position,
     angle = 90, //TODO! switch to radians
     //verticalAngle = 0, //? remove. verticalOffset in renderer instead?
-    fov = 60,
-    far = 1000
+    fov = 60
+    //far = 1000
   ) {
     this.position = position;
 
-    this.far = far;
+    this.far = 100000; //far;
     this.angle = angle;
     this.verticalAngle = 0; //verticalAngle;
     this.fov = fov;
   }
 
   castRays(level, rays, onrayhit) {
+    //TODO: check when "canvas wall" is hit and based on that somehow draw the floor from there and down?
+
     //raycount is the same a resolution.
     const start = this.angle - this.fov / 2;
     const end = this.angle + this.fov / 2;
@@ -30,7 +32,9 @@ class Camera {
 
     const rayHits = [];
 
-    const polygons = level.polygons;
+    const polygons = [...level.polygons, level.walls];
+
+    //console.log(level.polygons, level.walls, level.polygons);
 
     for (var i = 0; i < rays; i++) {
       const direction = start + increment * i;
@@ -47,12 +51,15 @@ class Camera {
         intersects: false,
         hit: undefined,
         angle: direction2,
+        finalangle: angle, // * (Math.PI / 180), //TODO: check out value
+        closest: true,
         distance: undefined,
         ray: ray,
         normals: [],
         polygon: undefined,
         lineSegment: undefined,
         x: i,
+        canvasWall: false,
       };
 
       if (polygons.length === 0) break; //! test
@@ -70,8 +77,6 @@ class Camera {
         if (polygon.height != polygons[Math.max(0, j - 1)].height)
           heightSort = true;
 
-        //return [];
-
         for (var k = 0; k < lineSegments.length; k++) {
           const lineSegment = lineSegments[k];
 
@@ -87,6 +92,8 @@ class Camera {
             intersects: true,
             hit: intersection.point,
             angle: direction2,
+            finalangle: angle,
+            closest: true,
             distance: distance,
             ray: ray,
             normal: intersection.normal,
@@ -113,14 +120,23 @@ class Camera {
         //return rayHits;
       }
 
+      const transparentPass = transparencyData.sort(
+        (a, b) => b.distance - a.distance
+      );
+
       if (rayInformation.intersects) {
-        if (rayInformation.polygon.texture.transparent) {
-          const transparentPass = transparencyData.sort(
-            (a, b) => b.distance - a.distance
-          );
+        if (
+          rayInformation.polygon.texture &&
+          rayInformation.polygon.texture.transparent
+        ) {
+          // const transparentPass = transparencyData.sort(
+          //   (a, b) => b.distance - a.distance
+          // );
 
           for (var j = 0; j < transparentPass.length; j++) {
             var pass = transparentPass[j];
+
+            if (j < transparentPass.length - 1) pass.closest = false;
 
             if (onrayhit) onrayhit(level, pass);
             rayHits.push(pass);
@@ -142,6 +158,9 @@ class Camera {
 
           for (var j = heightPass.length - 1; j > -1; j--) {
             var pass = heightPass[j];
+
+            if (pass !== transparentPass[transparentPass.length - 1])
+              pass.closest = false;
 
             if (onrayhit) onrayhit(level, pass);
             rayHits.push(pass);

@@ -6,3 +6,7 @@ export { Vector2 } from "./math/vector2.js";
 export { Ray } from "./math/ray.js";
 export { LevelHelper } from "./helpers/levelHelper.js";
 export { Polygon } from "./primitives/polygon.js";
+export { TextureLoader } from "./loaders/textureLoader.js";
+export { DirectionalLight } from "../src/lights/directionalLight.js";
+export { Color } from "../src/primitives/color.js";
+export { LineSegment } from "../src/primitives/lineSegment.js";
