@@ -31,6 +31,7 @@ class Camera {
     const increment = (end - start) / rays;
 
     const rayHits = [];
+    //const testRays = [];
 
     const polygons = [...level.polygons, level.walls];
 
@@ -124,54 +125,63 @@ class Camera {
         (a, b) => b.distance - a.distance
       );
 
-      if (rayInformation.intersects) {
-        if (
-          rayInformation.polygon.texture &&
-          rayInformation.polygon.texture.transparent
-        ) {
-          // const transparentPass = transparencyData.sort(
-          //   (a, b) => b.distance - a.distance
-          // );
+      if (!rayInformation.intersects) continue;
 
-          for (var j = 0; j < transparentPass.length; j++) {
-            var pass = transparentPass[j];
+      if (
+        rayInformation.polygon.texture &&
+        rayInformation.polygon.texture.transparent
+      ) {
+        // const transparentPass = transparencyData.sort(
+        //   (a, b) => b.distance - a.distance
+        // );
 
-            if (j < transparentPass.length - 1) pass.closest = false;
+        for (var j = 0; j < transparentPass.length; j++) {
+          var pass = transparentPass[j];
 
-            if (onrayhit) onrayhit(level, pass);
-            rayHits.push(pass);
-          }
-        } else if (heightSort) {
-          const heightPrePass = heightCandidates.sort(
-            (a, b) => a.distance - b.distance
-          );
+          if (j < transparentPass.length - 1) pass.closest = false;
 
-          const heightPass = [heightPrePass[0]];
-
-          for (var j = 1; j < heightPrePass.length; j++) {
-            if (
-              heightPrePass[j].polygon.height >
-              heightPass[heightPass.length - 1].polygon.height
-            )
-              heightPass.push(heightPrePass[j]);
-          }
-
-          for (var j = heightPass.length - 1; j > -1; j--) {
-            var pass = heightPass[j];
-
-            if (pass !== transparentPass[transparentPass.length - 1])
-              pass.closest = false;
-
-            if (onrayhit) onrayhit(level, pass);
-            rayHits.push(pass);
-          }
-        } else {
-          if (onrayhit) onrayhit(level, rayInformation);
-          rayHits.push(rayInformation);
+          if (onrayhit) onrayhit(level, pass);
+          rayHits.push(pass);
         }
-      }
-    }
+      } else if (heightSort) {
+        const heightPrePass = heightCandidates.sort(
+          (a, b) => a.distance - b.distance
+        );
 
+        const heightPass = [heightPrePass[0]];
+
+        for (var j = 1; j < heightPrePass.length; j++) {
+          if (
+            heightPrePass[j].polygon.height >
+            heightPass[heightPass.length - 1].polygon.height
+          )
+            heightPass.push(heightPrePass[j]);
+        }
+
+        for (var j = heightPass.length - 1; j > -1; j--) {
+          var pass = heightPass[j];
+
+          if (pass !== transparentPass[transparentPass.length - 1])
+            pass.closest = false;
+
+          if (onrayhit) onrayhit(level, pass);
+          rayHits.push(pass);
+        }
+      } else {
+        //testRays.push([rayInformation.distance]);
+        if (onrayhit) onrayhit(level, rayInformation);
+        rayHits.push(rayInformation);
+      }
+      // testRays.push(
+      //   ...[
+      //     rayInformation.distance + 0.001,
+      //     rayInformation.angle + 0.001,
+      //     rayInformation.finalangle + 0.001,
+      //   ]
+      // );
+    }
+    //console.log(testRays);
+    //debugger;
     return rayHits;
   }
 }

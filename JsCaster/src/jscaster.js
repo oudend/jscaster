@@ -10,3 +10,4 @@ export { TextureLoader } from "./loaders/textureLoader.js";
 export { DirectionalLight } from "../src/lights/directionalLight.js";
 export { Color } from "../src/primitives/color.js";
 export { LineSegment } from "../src/primitives/lineSegment.js";
+export { WebglRenderer } from "../src/renderers/webglRenderer.js";

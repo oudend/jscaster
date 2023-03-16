@@ -1,7 +1,7 @@
 import { Vector2 } from "../math/vector2.js";
 import { Color } from "../primitives/color.js";
 import { Texture } from "../primitives/texture.js";
-import { degrees_to_radians, synchronousSleep } from "../utils.js";
+import { degrees_to_radians } from "../utils.js";
 
 class CanvasRenderer {
   //? no texture support.
@@ -203,6 +203,14 @@ class CanvasRenderer {
             (1.0 / Math.cos(ray.angle))
         );
 
+        // console.log(
+        //   floorDiagonalDistance,
+        //   this.distanceToProjectionPlane,
+        //   floorRatio,
+        //   1.0 / Math.cos(ray.angle)
+        // );
+        // debugger;
+
         var ceilingDiagonalDistance = Math.floor(
           this.distanceToProjectionPlane *
             ceilingRatio *
@@ -262,6 +270,18 @@ class CanvasRenderer {
                 floorTileColumn * 4 +
                 2
             ];
+
+          //!DEBUG
+          this.baseSprite.data[floorRow * 4 * this.canvas.width + x * 4] =
+            ray.finalAngle * (3.1415 / 180) * 255; //(row / this.canvas.height) * 255; //(floorXEnd - this.camera.position.x * 2) / (600 / 255);
+          this.baseSprite.data[
+            floorRow * 4 * this.canvas.width + x * 4 + 1
+          ] = 1; //(floorYEnd - this.camera.position.y * 2) / (600 / 255);
+          this.baseSprite.data[
+            floorRow * 4 * this.canvas.width + x * 4 + 2
+          ] = 1;
+          //!DEBUG
+
           this.baseSprite.data[
             floorRow * 4 * this.canvas.width + x * 4 + 3
           ] = 255;

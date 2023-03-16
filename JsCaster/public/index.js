@@ -5,6 +5,7 @@ import {
   Vector2,
   LevelHelper,
   RendererHelper,
+  WebglRenderer,
 } from "../src/jscaster.js";
 
 import { degrees_to_radians } from "../src/utils.js";
@@ -15,10 +16,10 @@ import Stats from "../lib/stats.module.js";
 
 const camera = new Camera(new Vector2(200, 400), 270, 70, 1000);
 
-const renderer = new CanvasRenderer(300, 300, camera, document.body);
+const renderer = new WebglRenderer(1000, 1000, camera, document.body);
 
-renderer.canvas.style.width = `${200}px`;
-renderer.canvas.style.height = `${300}px`;
+//renderer.canvas.style.width = `${200}px`;
+//renderer.canvas.style.height = `${300}px`;
 
 renderer.dom = document.body;
 
