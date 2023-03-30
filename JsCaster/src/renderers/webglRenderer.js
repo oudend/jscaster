@@ -1,14 +1,13 @@
 import { Vector2 } from "../math/vector2.js";
 import { Color } from "../primitives/color.js";
 import { Texture } from "../primitives/texture.js";
+import { TextureLoader } from "../loaders/textureLoader.js";
 import {
   degrees_to_radians,
   storeDataInTexture,
   imageToTexture,
 } from "../utils.js";
 import { createProgramFromSources } from "../../lib/webgl-utils.js";
-
-const glsl = (x) => x; // syntax highlighting
 
 class WebglRenderer {
   constructor(width = 100, height = 100, camera) {
@@ -43,21 +42,41 @@ class WebglRenderer {
       this.resolution / 2 / Math.tan(degrees_to_radians(this.camera.fov / 2));
     //this.angleBetweenRays = this.camera.fov / this.resolution;
 
-    this.floorTexture = new Texture(
-      "../assets/bricks.jpg",
-      undefined,
-      undefined,
-      undefined,
-      "repeat"
-    );
+    // this.floorTexture = new Texture(
+    //   "../assets/bricks.jpg",
+    //   undefined,
+    //   undefined,
+    //   undefined,
+    //   "repeat"
+    // );
 
-    this.ceilingTexture = new Texture(
-      "../assets/bricks2.jpg",
-      undefined,
-      undefined,
-      undefined,
-      "repeat"
-    );
+    // this.ceilingTexture = new Texture(
+    //   "../assets/bricks2.jpg",
+    //   undefined,
+    //   undefined,
+    //   undefined,
+    //   "repeat"
+    // );
+
+    // // this.floorTexture = new TextureLoader(
+    // //   "../assets/frame.jpg",
+    // //   undefined,
+    // //   true, //!TODO: IMplement scaleToFit :)
+    // //   true,
+    // //   "repeat",
+    // //   new Vector2(1, 1),
+    // //   new Vector2(0, 0)
+    // // );
+
+    // // this.ceilingTexture = new TextureLoader(
+    // //   "../assets/bricks2.jpg",
+    // //   undefined,
+    // //   true, //!TODO: IMplement scaleToFit :)
+    // //   true,
+    // //   "repeat",
+    // //   new Vector2(1, 1),
+    // //   new Vector2(0, 0)
+    // // );
 
     this.baseCanvas = document.createElement("canvas");
 
@@ -96,11 +115,17 @@ class WebglRenderer {
       uniform sampler2D floorTexture;
       uniform sampler2D ceilingTexture;
 
+      uniform ivec2 levelDimensions;
 
       uniform ivec2 floorTextureDimensions;
       uniform ivec2 ceilingTextureDimensions;
 
       uniform vec2 resolution;
+      uniform vec2 ceilingTextureScale;
+      uniform vec2 floorTextureScale;
+
+      uniform int floorTextureLoaded;
+      uniform int ceilingTextureLoaded;
 
       uniform float projectionPlaneCenter;
 
@@ -138,13 +163,18 @@ class WebglRenderer {
         //! clue: try to reverse the way it draws walls so when you try and go up it goes down.
 
         //? gl_FragCoord.y >= resolution.y,  gl_FragCoord.y <= (resolution.y - y) - height
-        if(gl_FragCoord.y >= y || gl_FragCoord.y <= y + height) {
+        if(gl_FragCoord.y >= y || gl_FragCoord.y <= y + height - 1.) {
           bool isFloorAndCeilingLoaded = data4.r == 1.;
+
+          // if() {
+          //   fragColor = vec4(0., 0., 0., 1.);
+          //   return;
+          // }
           
-          if(!isFloorAndCeilingLoaded) {
-            fragColor = vec4(0., 0., 0., 1.);
-            return;
-          }
+          // if(!isFloorAndCeilingLoaded) {
+          //   fragColor = vec4(0., 0., 0., 1.);
+          //   return;
+          // }
 
           bool isFloor = gl_FragCoord.y <= y;
 
@@ -168,14 +198,9 @@ class WebglRenderer {
           float finalAngle = data6.r;
           float offsetHeight = data6.g * 255.;
 
-          float textureTranslationXscale = (1200./float(floorTextureDimensions.x)) * (600. / resolution.x);
-          float textureTranslationYscale = (1200./float(floorTextureDimensions.y)) * (600. / resolution.y);
           //! this is an absolutely disgusting solution
           //! that might not even work. But oh well.
 
-          float textureXscale = resolution.x / float(floorTextureDimensions.x);
-          float textureYscale = resolution.y / float(floorTextureDimensions.y);
-          
           // if(gl_FragCoord.y > y + height) {
           //   return;
           // }
@@ -183,132 +208,101 @@ class WebglRenderer {
 
           //?row = gl_FragCoord.y - ( (resolution.y - y) - height);
 
-          if(isFloor) {
+          float multiplier = resolution.x * (1. / 600.);
+
+          float levelWidth = float(levelDimensions.x) ;//!
+          float levelHeight = float(levelDimensions.y);//!
+
+          float mysteriousValueX = levelWidth * 0.2;//level=anything, res = (600, 600)
+            float mysteriousValueY = levelHeight * 0.2;//level=anything, res = (600, 600)
+
+          if(isFloor && floorTextureLoaded == 1) {
+            // float floorTextureXscale = 1200. / float(floorTextureDimensions.x);
+            // float floorTextureYscale = 1200. / float(floorTextureDimensions.y);
             //?float floorRow = lastBottomOfWall + row;
 
             float floorRatio = (floorOffset / (row - projectionPlaneCenter));
 
-            float floorDiagonalDistance = ((distanceToProjectionPlane * floorRatio) * (1.0 / rayAngle));
+            //! * 1. x=600
+            //! * .5 x=300
+
+            float floorDiagonalDistance = ((distanceToProjectionPlane * floorRatio * multiplier) * (1.0 / rayAngle));
 
             float floorXEnd = (floorDiagonalDistance * cos(finalAngle));
             float floorYEnd = (floorDiagonalDistance * sin(finalAngle));
-
-            float levelWidth = 1000.;
-            float levelHeight = 1000.;
 
             //! floorTextureDimensions = 1024, 1024
 
             //!1200 res = * .6
             //!600 res = 1.2
 
-            floorXEnd += cameraPosition.x * textureTranslationXscale;//cameraPosition.x;//normalizedX * float(floorTextureDimensions.x);//normalizedX * float(floorTextureDimensions.x) / xScale;//normalizedX * float(floorTextureDimensions.x); //?1000 is the width and height of the level
-            floorYEnd += cameraPosition.y * textureTranslationXscale;//cameraPosition.y;//normalizedY * float(floorTextureDimensions.y);//normalizedY * float(floorTextureDimensions.y) / yScale;//normalizedY * float(floorTextureDimensions.y);
+            //?float mysteriousValue = 200.; level=(1000, 1000), res = (600, 600)
+            //?float mysteriousValue = 10.; //level=(100, 1000), res = (600, 600)
 
-            int floorTileX = int( mod(floorXEnd * textureXscale, float(floorTextureDimensions.x) ) ); 
-            int floorTileY = int( mod(floorYEnd * textureXscale, float(floorTextureDimensions.y) ) );
+            //?float mysteriousValueX = 20.; //level=(100, 1000), res = (600, 600)
+            //?float mysteriousValueY = 200.; //level=(100, 1000), res = (600, 600)
+
+            // float mysteriousValueX = levelWidth * 0.2;//level=anything, res = (600, 600)
+            // float mysteriousValueY = levelHeight * 0.2;//level=anything, res = (600, 600)
+            //! mysteriousValue might be right now...
+
+            //!float mysteriousValueX = levelWidth * 0.2;//!level=anything, res = (100, 600)
+            //!float mysteriousValueY = levelHeight * 0.2;//!level=anything, res = (100, 600)
+
+            //?floorTextureTranslationXscale = 1.2;
+            //?floorTextureTranslationYscale = 1.2;
+
+            float floorTextureTranslationXscale = 1.2;
+            float floorTextureTranslationYscale = 1.2;
+
+            floorXEnd += cameraPosition.x * floorTextureTranslationXscale; //?((levelWidth + mysteriousValue)/levelWidth);//?floorTextureTranslationXscale;//cameraPosition.x;//normalizedX * float(floorTextureDimensions.x);//normalizedX * float(floorTextureDimensions.x) / xScale;//normalizedX * float(floorTextureDimensions.x); //?1000 is the width and height of the level
+            floorYEnd += cameraPosition.y * floorTextureTranslationYscale; //?((levelHeight + mysteriousValue)/levelWidth);//?floorTextureTranslationXscale;//cameraPosition.y;//normalizedY * float(floorTextureDimensions.y);//normalizedY * float(floorTextureDimensions.y) / yScale;//normalizedY * float(floorTextureDimensions.y);
+
+            float floorTextureXscale = float(floorTextureDimensions.x) / (levelWidth + mysteriousValueX);
+            float floorTextureYscale = float(floorTextureDimensions.y) / (levelHeight + mysteriousValueY);
+
+            int floorTileX = int( (floorXEnd * floorTextureXscale) / floorTextureScale.x ) % floorTextureDimensions.x;//mod(floorXEnd * floorTextureXscale, float(floorTextureDimensions.x) ) ); 
+            int floorTileY = int( (floorYEnd * floorTextureYscale) / floorTextureScale.y ) % floorTextureDimensions.y; //mod(floorYEnd * floorTextureYscale, float(floorTextureDimensions.y) ) );
             
             fragColor = texelFetch(floorTexture, ivec2(floorTileX, floorTileY), 0);
             return;
           }
 
+          if(ceilingTextureLoaded != 1) {
+            fragColor = vec4(0., 0., 0., 1.);
+            return;
+          }
+
+          // float ceilingTextureTranslationXscale = (1200./float(ceilingTextureDimensions.x)) * (600. / resolution.x);
+          // float ceilingTextureTranslationYscale = (1200./float(ceilingTextureDimensions.y)) * (600. / resolution.y);
+
+          // float ceilingTextureXscale = 1200. / float(ceilingTextureDimensions.x);
+          // float ceilingTextureYscale = 1200. / float(ceilingTextureDimensions.y);
+
           //?float ceilingRow = lastBottomOfWall + row;
 
           float ceilingRatio = (ceilingHeight * 2. - floorOffset) / (projectionPlaneCenter - row);
 
-          float ceilingDiagonalDistance = ((distanceToProjectionPlane * ceilingRatio) * (1.0 / rayAngle));
+          float ceilingDiagonalDistance = ((distanceToProjectionPlane * ceilingRatio * multiplier) * (1.0 / rayAngle));
 
           float ceilingYEnd = (ceilingDiagonalDistance * sin(finalAngle));
           float ceilingXEnd = (ceilingDiagonalDistance * cos(finalAngle));
-          
-          ceilingXEnd += cameraPosition.x * textureTranslationXscale;
-          ceilingYEnd += cameraPosition.y * textureTranslationXscale;
 
-          int ceilingTileX = int( mod(ceilingXEnd * textureXscale, float(ceilingTextureDimensions.x) ) ); 
-          int ceilingTileY = int( mod(ceilingYEnd * textureXscale, float(ceilingTextureDimensions.y) ) );
+          float ceilingTextureTranslationXscale = 1.2;
+          float ceilingTextureTranslationYscale = 1.2;
+          
+          ceilingXEnd += cameraPosition.x * ceilingTextureTranslationXscale;
+          ceilingYEnd += cameraPosition.y * ceilingTextureTranslationYscale;
+
+          float ceilingTextureXscale = float(ceilingTextureDimensions.x) / (levelWidth + mysteriousValueX);
+          float ceilingTextureYscale = float(ceilingTextureDimensions.y) / (levelHeight + mysteriousValueY);
+
+          int ceilingTileX = int( (ceilingXEnd * ceilingTextureXscale) / ceilingTextureScale ) % ceilingTextureDimensions.x; //int( mod(ceilingXEnd * ceilingTextureXscale, float(ceilingTextureDimensions.x) ) ); 
+          int ceilingTileY = int( (ceilingYEnd * ceilingTextureYscale) / ceilingTextureScale ) % ceilingTextureDimensions.y; //int( mod(ceilingYEnd * ceilingTextureYscale, float(ceilingTextureDimensions.y) ) );
 
           fragColor = texelFetch(ceilingTexture, ivec2(ceilingTileX, ceilingTileY), 0);
           return;
-          //?   var floorRow = lastBottomOfWall + row;
-      //?   var ceilingRow = lastTopOfWall - row;
 
-      //?   var floorRatio =
-      //?     this.floorOffset /
-      //?     (Math.max(floorRow, ceilingRow) - this.projectionPlaneCenter);
-
-      //?   var ceilingRatio =
-      //?     (level.ceilingHeight * 2 - this.floorOffset) /
-      //?     (this.projectionPlaneCenter - ceilingRow); //TODO: replace 200 with the actual height
-
-      //?   var floorDiagonalDistance = Math.floor(
-      //?     this.distanceToProjectionPlane *
-      //?       floorRatio *
-      //?       (1.0 / Math.cos(ray.angle))
-      //?   );
-
-      //?   var ceilingDiagonalDistance = Math.floor(
-      //?     this.distanceToProjectionPlane *
-      //?       ceilingRatio *
-      //?       (1.0 / Math.cos(ray.angle))
-      //?   );
-
-      //?   var floorYEnd = Math.floor(
-      //?     floorDiagonalDistance * Math.sin(degrees_to_radians(ray.finalangle))
-      //?   );
-      //?   var floorXEnd = Math.floor(
-      //?     floorDiagonalDistance * Math.cos(degrees_to_radians(ray.finalangle))
-      //?   );
-      //?   floorXEnd += this.camera.position.x * 2;
-      //?   floorYEnd += this.camera.position.y * 2;
-
-      //?   var ceilingYEnd = Math.floor(
-      //?     ceilingDiagonalDistance * Math.sin(degrees_to_radians(ray.finalangle))
-      //?   );
-      //?   var ceilingXEnd = Math.floor(
-      //?     ceilingDiagonalDistance * Math.cos(degrees_to_radians(ray.finalangle))
-      //?   );
-      //?   ceilingXEnd += this.camera.position.x * 2;
-      //?   ceilingYEnd += this.camera.position.y * 2;
-
-      //   // Find offset of tile and column in texture
-      //?   var floorTileRow = Math.floor(
-      //?     Math.abs(floorYEnd) % this.floorTexture.height
-      //?   ); //this.floorTexture.height); //TODO: replace 64 with tile_size variable
-      //?   var floorTileColumn = Math.floor(
-      //?     Math.abs(floorXEnd) % this.floorTexture.width
-      //?   ); //% this.floorTexture.width);
-      //   // Pixel to draw
-
-      //?   var ceilingTileRow = Math.floor(
-      //?     Math.abs(ceilingYEnd) % this.floorTexture.height
-      //?   ); //this.floorTexture.height); //TODO: replace 64 with tile_size variable
-      //?   var ceilingTileColumn = Math.floor(
-      //?     Math.abs(ceilingXEnd) % this.floorTexture.width
-      //?   ); //% this.floorTexture.width);
-
-      //   //? ceiling
-      //   if (ceilingRow >= 0) {
-      //     this.baseSprite.data[ceilingRow * 4 * this.canvas.width + x * 4] =
-      //       this.ceilingTexture.imagedata.data[
-      //         ceilingTileRow * 4 * this.ceilingTexture.height +
-      //           ceilingTileColumn * 4
-      //       ];
-      //     this.baseSprite.data[ceilingRow * 4 * this.canvas.width + x * 4 + 1] =
-      //       this.ceilingTexture.imagedata.data[
-      //         ceilingTileRow * 4 * this.ceilingTexture.height +
-      //           ceilingTileColumn * 4 +
-      //           1
-      //       ];
-      //     this.baseSprite.data[ceilingRow * 4 * this.canvas.width + x * 4 + 2] =
-      //       this.ceilingTexture.imagedata.data[
-      //         ceilingTileRow * 4 * this.ceilingTexture.height +
-      //           ceilingTileColumn * 4 +
-      //           2
-      //       ];
-      //     this.baseSprite.data[
-      //       ceilingRow * 4 * this.canvas.width + x * 4 + 3
-      //     ] = 255;
-      //   }
-      // }
 
           fragColor = vec4(0., 0., 0., 1.);
           return;
@@ -325,7 +319,7 @@ class WebglRenderer {
                 .fill(0)
                 .map(
                   (_, i) => `case ${i}:
-                fragColor = texelFetch(polygonTextures[${0}], ivec2(data3.g, closestYCoord), 0);
+                fragColor = data2.b * vec4(data1.b, data2.r, data2.g, 1.) + texelFetch(polygonTextures[${_}], ivec2(data3.g, closestYCoord), 0);
                 return;
           
                 break;
@@ -336,7 +330,7 @@ class WebglRenderer {
             }
         }
 
-        vec4 color = vec4(data1.b, data2.r, data2.g, 1.);
+        vec4 color = vec4(data1.b, data2.r, data2.g, data2.b);
 
       
         fragColor = color.rgba;
@@ -372,6 +366,15 @@ class WebglRenderer {
       "ceilingTexture"
     );
 
+    this.ceilingTextureScaleLocation = this.gl.getUniformLocation(
+      this.program,
+      "ceilingTextureScale"
+    );
+    this.floorTextureScaleLocation = this.gl.getUniformLocation(
+      this.program,
+      "floorTextureScale"
+    );
+
     this.floorTextureDimensionLocation = this.gl.getUniformLocation(
       this.program,
       "floorTextureDimensions"
@@ -391,6 +394,25 @@ class WebglRenderer {
       this.program,
       "resolution"
     );
+
+    this.levelDimensionLocation = this.gl.getUniformLocation(
+      this.program,
+      "levelDimensions"
+    );
+
+    this.floorTextureLoadedLocation = this.gl.getUniformLocation(
+      this.program,
+      "floorTextureLoaded"
+    );
+    this.ceilingTextureLoadedLocation = this.gl.getUniformLocation(
+      this.program,
+      "ceilingTextureLoaded"
+    );
+
+    //floorTextureLoaded
+
+    this.floorTextureScale = new Vector2(1, 1);
+    this.ceilingTextureScale = new Vector2(1, 1);
 
     //resolution
 
@@ -482,6 +504,8 @@ class WebglRenderer {
 
     const distance = ray.distance; //  * degrees_to_radians(BETA); //ray.distance;
 
+    //const fake = 600 / 2 / Math.tan(degrees_to_radians(this.camera.fov / 2));
+
     const wallHeight =
       (polygon.height / distance / Math.cos(ray.angle)) *
       this.distanceToProjectionPlane;
@@ -513,20 +537,31 @@ class WebglRenderer {
     const webglIndex = x * 3;
 
     if (
-      this.floorTexture?.loaded &&
-      this.ceilingTexture?.loaded &&
+      (level.floorTexture.loaded || level.ceilingTexture.loaded) &&
       ray.closest
     ) {
-      if (!this.floorTextureLoaded) {
+      if (!this.floorTextureLoaded && level.floorTexture.loaded) {
         //console.log(this.floorTexture);
-        imageToTexture(this.gl, this.floorTexture.image, this.gl.TEXTURE1);
+        imageToTexture(
+          this.gl,
+          level.floorTexture.texture.image,
+          this.gl.TEXTURE1
+        );
         this.floorTextureLoaded = true;
       }
 
-      if (!this.ceilingTextureLoaded) {
-        imageToTexture(this.gl, this.ceilingTexture.image, this.gl.TEXTURE2);
+      if (!this.ceilingTextureLoaded && level.ceilingTexture.loaded) {
+        imageToTexture(
+          this.gl,
+          level.ceilingTexture.texture.image,
+          this.gl.TEXTURE2
+        );
         if (!this.ceilingTextureLoaded) {
-          imageToTexture(this.gl, this.ceilingTexture.image, this.gl.TEXTURE2);
+          imageToTexture(
+            this.gl,
+            level.ceilingTexture.texture.image,
+            this.gl.TEXTURE2
+          );
           this.ceilingTextureLoaded = true;
         }
       }
@@ -555,9 +590,14 @@ class WebglRenderer {
 
       //data6.r = finalAngle;
 
+      const fake = 600 / 2 / Math.tan(degrees_to_radians(this.camera.fov / 2));
+
+      const fakeOffsetHeight =
+        (this.floorOffset / distance / Math.cos(ray.angle)) * fake;
+
       //! CHANGED
       var lastBottomOfWallChanged = Math.floor(
-        this.projectionPlaneCenter - offsetHeight / 2 - wallHeight
+        this.projectionPlaneCenter + fakeOffsetHeight / 2
       );
 
       this.webglData[this.resolution * 9 + webglIndex] = 1;
@@ -590,121 +630,11 @@ class WebglRenderer {
         offsetHeight / 255;
       this.webglData[this.resolution * 15 + webglIndex + 2] = 0;
       this.webglData[this.resolution * 15 + webglIndex + 3] = 0;
-      //ray.angle
-      // this.webglData[this.resolution * 12 + webglIndex + 2] = lastTopOfWall;
-      // this.webglData[this.resolution * 12 + webglIndex + 3] =
-      //   this.projectionPlaneCenter;
-
-      //var floorIterations = lastTopOfWall
-
-      //? floor and ceiling casting
-      //for (var row = 0; row < Math.max(floorIterations, lastTopOfWall); row++) {
-      //   var floorRow = lastBottomOfWall + row;
-      //   var ceilingRow = lastTopOfWall - row;
-
-      //   var floorRatio =
-      //     this.floorOffset /
-      //     (Math.max(floorRow, ceilingRow) - this.projectionPlaneCenter);
-
-      //   var ceilingRatio =
-      //     (level.ceilingHeight * 2 - this.floorOffset) /
-      //     (this.projectionPlaneCenter - ceilingRow); //TODO: replace 200 with the actual height
-
-      //   var floorDiagonalDistance = Math.floor(
-      //     this.distanceToProjectionPlane *
-      //       floorRatio *
-      //       (1.0 / Math.cos(ray.angle))
-      //   );
-
-      //   var ceilingDiagonalDistance = Math.floor(
-      //     this.distanceToProjectionPlane *
-      //       ceilingRatio *
-      //       (1.0 / Math.cos(ray.angle))
-      //   );
-
-      //   var floorYEnd = Math.floor(
-      //     floorDiagonalDistance * Math.sin(degrees_to_radians(ray.finalangle))
-      //   );
-      //   var floorXEnd = Math.floor(
-      //     floorDiagonalDistance * Math.cos(degrees_to_radians(ray.finalangle))
-      //   );
-      //   floorXEnd += this.camera.position.x * 2;
-      //   floorYEnd += this.camera.position.y * 2;
-
-      //   var ceilingYEnd = Math.floor(
-      //     ceilingDiagonalDistance * Math.sin(degrees_to_radians(ray.finalangle))
-      //   );
-      //   var ceilingXEnd = Math.floor(
-      //     ceilingDiagonalDistance * Math.cos(degrees_to_radians(ray.finalangle))
-      //   );
-      //   ceilingXEnd += this.camera.position.x * 2;
-      //   ceilingYEnd += this.camera.position.y * 2;
-
-      //   // Find offset of tile and column in texture
-      //   var floorTileRow = Math.floor(
-      //     Math.abs(floorYEnd) % this.floorTexture.height
-      //   ); //this.floorTexture.height); //TODO: replace 64 with tile_size variable
-      //   var floorTileColumn = Math.floor(
-      //     Math.abs(floorXEnd) % this.floorTexture.width
-      //   ); //% this.floorTexture.width);
-      //   // Pixel to draw
-
-      //   var ceilingTileRow = Math.floor(
-      //     Math.abs(ceilingYEnd) % this.floorTexture.height
-      //   ); //this.floorTexture.height); //TODO: replace 64 with tile_size variable
-      //   var ceilingTileColumn = Math.floor(
-      //     Math.abs(ceilingXEnd) % this.floorTexture.width
-      //   ); //% this.floorTexture.width);
-      //   // Pixel to draw
-
-      //   //? floor
-      //   if (floorRow <= this.height) {
-      //     this.baseSprite.data[floorRow * 4 * this.canvas.width + x * 4] =
-      //       this.floorTexture.imagedata.data[
-      //         floorTileRow * 4 * this.floorTexture.height + floorTileColumn * 4
-      //       ];
-      //     this.baseSprite.data[floorRow * 4 * this.canvas.width + x * 4 + 1] =
-      //       this.floorTexture.imagedata.data[
-      //         floorTileRow * 4 * this.floorTexture.height +
-      //           floorTileColumn * 4 +
-      //           1
-      //       ];
-      //     this.baseSprite.data[floorRow * 4 * this.canvas.width + x * 4 + 2] =
-      //       this.floorTexture.imagedata.data[
-      //         floorTileRow * 4 * this.floorTexture.height +
-      //           floorTileColumn * 4 +
-      //           2
-      //       ];
-      //     this.baseSprite.data[
-      //       floorRow * 4 * this.canvas.width + x * 4 + 3
-      //     ] = 255;
-      //   }
-
-      //   //? ceiling
-      //   if (ceilingRow >= 0) {
-      //     this.baseSprite.data[ceilingRow * 4 * this.canvas.width + x * 4] =
-      //       this.ceilingTexture.imagedata.data[
-      //         ceilingTileRow * 4 * this.ceilingTexture.height +
-      //           ceilingTileColumn * 4
-      //       ];
-      //     this.baseSprite.data[ceilingRow * 4 * this.canvas.width + x * 4 + 1] =
-      //       this.ceilingTexture.imagedata.data[
-      //         ceilingTileRow * 4 * this.ceilingTexture.height +
-      //           ceilingTileColumn * 4 +
-      //           1
-      //       ];
-      //     this.baseSprite.data[ceilingRow * 4 * this.canvas.width + x * 4 + 2] =
-      //       this.ceilingTexture.imagedata.data[
-      //         ceilingTileRow * 4 * this.ceilingTexture.height +
-      //           ceilingTileColumn * 4 +
-      //           2
-      //       ];
-      //     this.baseSprite.data[
-      //       ceilingRow * 4 * this.canvas.width + x * 4 + 3
-      //     ] = 255;
-      //   }
-      // }
     }
+
+    this.webglData[webglIndex] =
+      (this.projectionPlaneCenter + offsetHeight / 2 - wallHeight) / 255;
+    this.webglData[webglIndex + 1] = wallHeight / 255;
 
     if (polygon.texture && polygon.texture.loaded) {
       var point = Math.floor(Vector2.distance(ray.lineSegment.start, ray.hit));
@@ -774,16 +704,21 @@ class WebglRenderer {
       this.webglData[this.resolution * 6 + webglIndex + 3] =
         polygon.texture.textureIndex; //! texture index.
 
-      // return; //! should be there normally
+      this.webglData[webglIndex + 2] = lightColor.r / 255;
+      this.webglData[this.resolution * 3 + webglIndex] = lightColor.g / 255;
+      this.webglData[this.resolution * 3 + webglIndex + 1] = lightColor.b / 255;
+      this.webglData[this.resolution * 3 + webglIndex + 2] = intensity;
+
+      //! needs lightColor.rgba to color the walls correctly.
+
+      return; //! should be there normally
     }
 
-    this.webglData[webglIndex] =
-      (this.projectionPlaneCenter + offsetHeight / 2 - wallHeight) / 255;
-    this.webglData[webglIndex + 1] = wallHeight / 255;
-    this.webglData[webglIndex + 2] = color.r / 255;
-    // this.webglData[webglIndex + 3] =
-    //   polygon.texture && polygon.texture.loaded ? 1 : 0;
+    // this.webglData[webglIndex] =
+    //   (this.projectionPlaneCenter + offsetHeight / 2 - wallHeight) / 255;
+    // this.webglData[webglIndex + 1] = wallHeight / 255;
 
+    this.webglData[webglIndex + 2] = color.r / 255;
     this.webglData[this.resolution * 3 + webglIndex] = color.g / 255;
     this.webglData[this.resolution * 3 + webglIndex + 1] = color.b / 255;
     this.webglData[this.resolution * 3 + webglIndex + 2] = color.a / 255;
@@ -839,12 +774,16 @@ class WebglRenderer {
     this.gl.useProgram(this.program);
 
     this.gl.uniform2iv(this.floorTextureDimensionLocation, [
-      this.floorTexture.width,
-      this.floorTexture.height,
+      level.floorTexture.loaded ? level.floorTexture.texture.width : undefined,
+      level.floorTexture.loaded ? level.floorTexture.texture.height : undefined,
     ]);
     this.gl.uniform2iv(this.ceilingTextureDimensionLocation, [
-      this.ceilingTexture.width,
-      this.ceilingTexture.height,
+      level.ceilingTexture.loaded
+        ? level.ceilingTexture.texture.width
+        : undefined,
+      level.ceilingTexture.loaded
+        ? level.ceilingTexture.texture.height
+        : undefined,
     ]);
 
     // if (this.floorTextureLoaded) {
@@ -869,9 +808,36 @@ class WebglRenderer {
     ]);
 
     this.gl.uniform2fv(this.resolutionLocation, [
-      this.gl.canvas.width,
-      this.gl.canvas.height,
+      this.canvas.width,
+      this.canvas.height,
     ]);
+
+    this.gl.uniform2fv(this.floorTextureScaleLocation, [
+      level.floorTextureScale.x,
+      level.floorTextureScale.y,
+    ]);
+    this.gl.uniform2fv(this.ceilingTextureScaleLocation, [
+      level.ceilingTextureScale.x,
+      level.ceilingTextureScale.y,
+    ]);
+
+    //this.floorTextureScaleLocation
+
+    this.gl.uniform2iv(this.levelDimensionLocation, [
+      level.width,
+      level.height,
+    ]);
+
+    this.gl.uniform1i(
+      this.floorTextureLoadedLocation,
+      this.floorTextureLoaded ? 1 : 0
+    );
+    this.gl.uniform1i(
+      this.ceilingTextureLoadedLocation,
+      this.ceilingTextureLoaded ? 1 : 0
+    );
+
+    //levelDimensionLocation
 
     //this.loadedTextureLocation
 

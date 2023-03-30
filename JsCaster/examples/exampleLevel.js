@@ -18,6 +18,9 @@ const defaultTextureLoader = new TextureLoader(
   new Vector2(0.25, 1)
 );
 
+exampleLevel.setFloorTexture("../assets/shrek2.jpg", new Vector2(0.1, 0.1));
+exampleLevel.setCeilingTexture("../assets/shrek2.jpg", new Vector2(0.1, 0.1));
+
 // exampleLevel.addPolygon(
 //   new Polygon(
 //     [new Vector2(0, 0), new Vector2(10, 20), new Vector2(40, 10)],

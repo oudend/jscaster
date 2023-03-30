@@ -14,9 +14,17 @@ import { exampleLevel } from "../examples/exampleLevel.js";
 
 import Stats from "../lib/stats.module.js";
 
-const camera = new Camera(new Vector2(200, 400), 270, 70, 1000);
+const camera = new Camera(new Vector2(1, 1), 40, 70, 1000);
 
-const renderer = new WebglRenderer(1000, 1000, camera, document.body);
+const renderer = new WebglRenderer(
+  window.innerWidth,
+  window.innerHeight,
+  camera,
+  document.body
+);
+
+//! move this shit to the Level object!!!!!!!!!!!!!!!!!!!!!!!!!
+//renderer.setCeilingTexture("../assets/floor.jpg");
 
 //renderer.canvas.style.width = `${200}px`;
 //renderer.canvas.style.height = `${300}px`;

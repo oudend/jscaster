@@ -1,6 +1,7 @@
 import { Vector2 } from "../math/vector2.js";
 import { LineSegment } from "../primitives/lineSegment.js";
 import { Polygon } from "../primitives/polygon.js";
+import { TextureLoader } from "../loaders/textureLoader.js";
 
 class Level {
   constructor(width, height, ceilingHeight = 100) {
@@ -22,6 +23,12 @@ class Level {
       ],
       ceilingHeight //this.height //TODO: Make input variable
     );
+
+    this.floorTextureScale = new Vector2(1, 1);
+    this.ceilingTextureScale = new Vector2(1, 1);
+
+    this.floorTexture = {};
+    this.ceilingTexture = {};
   }
 
   get texturesLoaded() {
@@ -42,6 +49,16 @@ class Level {
   static fromFile() {}
 
   toFile() {}
+
+  setFloorTexture(src, scale = new Vector2(1, 1)) {
+    this.floorTexture = new TextureLoader(src);
+    this.floorTextureScale = scale;
+  }
+
+  setCeilingTexture(src, scale = new Vector2(1, 1)) {
+    this.ceilingTexture = new TextureLoader(src);
+    this.ceilingTextureScale = scale;
+  }
 
   addPolygon(polygon) {
     this.polygons.push(polygon);

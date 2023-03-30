@@ -211,6 +211,14 @@ class CanvasRenderer {
         // );
         // debugger;
 
+        var textureXscale = this.canvas.width / this.floorTexture.width;
+        var textureYscale = this.canvas.height / this.floorTexture.height;
+
+        var textureTranslationXscale =
+          (1200 / this.floorTexture.width) * (600 / this.canvas.width);
+        var textureTranslationYscale =
+          (1200 / this.floorTexture.height) * (600 / this.canvas.height);
+
         var ceilingDiagonalDistance = Math.floor(
           this.distanceToProjectionPlane *
             ceilingRatio *
@@ -223,8 +231,8 @@ class CanvasRenderer {
         var floorXEnd = Math.floor(
           floorDiagonalDistance * Math.cos(degrees_to_radians(ray.finalangle))
         );
-        floorXEnd += this.camera.position.x * 2;
-        floorYEnd += this.camera.position.y * 2;
+        floorXEnd += this.camera.position.x * textureTranslationXscale;
+        floorYEnd += this.camera.position.y * textureTranslationYscale;
 
         var ceilingYEnd = Math.floor(
           ceilingDiagonalDistance * Math.sin(degrees_to_radians(ray.finalangle))
@@ -232,23 +240,23 @@ class CanvasRenderer {
         var ceilingXEnd = Math.floor(
           ceilingDiagonalDistance * Math.cos(degrees_to_radians(ray.finalangle))
         );
-        ceilingXEnd += this.camera.position.x * 2;
-        ceilingYEnd += this.camera.position.y * 2;
+        ceilingXEnd += this.camera.position.x * textureTranslationXscale;
+        ceilingYEnd += this.camera.position.y * textureTranslationYscale;
 
         // Find offset of tile and column in texture
         var floorTileRow = Math.floor(
-          Math.abs(floorYEnd) % this.floorTexture.height
+          (Math.abs(floorYEnd) * textureYscale) % this.floorTexture.height
         ); //this.floorTexture.height); //TODO: replace 64 with tile_size variable
         var floorTileColumn = Math.floor(
-          Math.abs(floorXEnd) % this.floorTexture.width
+          (Math.abs(floorXEnd) * textureXscale) % this.floorTexture.width
         ); //% this.floorTexture.width);
         // Pixel to draw
 
         var ceilingTileRow = Math.floor(
-          Math.abs(ceilingYEnd) % this.floorTexture.height
+          (Math.abs(ceilingYEnd) * textureYscale) % this.floorTexture.height
         ); //this.floorTexture.height); //TODO: replace 64 with tile_size variable
         var ceilingTileColumn = Math.floor(
-          Math.abs(ceilingXEnd) % this.floorTexture.width
+          (Math.abs(ceilingXEnd) * textureXscale) % this.floorTexture.width
         ); //% this.floorTexture.width);
         // Pixel to draw
 
@@ -270,17 +278,6 @@ class CanvasRenderer {
                 floorTileColumn * 4 +
                 2
             ];
-
-          //!DEBUG
-          this.baseSprite.data[floorRow * 4 * this.canvas.width + x * 4] =
-            ray.finalAngle * (3.1415 / 180) * 255; //(row / this.canvas.height) * 255; //(floorXEnd - this.camera.position.x * 2) / (600 / 255);
-          this.baseSprite.data[
-            floorRow * 4 * this.canvas.width + x * 4 + 1
-          ] = 1; //(floorYEnd - this.camera.position.y * 2) / (600 / 255);
-          this.baseSprite.data[
-            floorRow * 4 * this.canvas.width + x * 4 + 2
-          ] = 1;
-          //!DEBUG
 
           this.baseSprite.data[
             floorRow * 4 * this.canvas.width + x * 4 + 3
