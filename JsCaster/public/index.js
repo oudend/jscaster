@@ -8,23 +8,17 @@ import {
   WebglRenderer,
 } from "../src/jscaster.js";
 
+//!documentation build --document-exported ./JsCaster/src/jscaster.js -f html -o ./JsCaster/docs
+
 import { degrees_to_radians } from "../src/utils.js";
 
 import { exampleLevel } from "../examples/exampleLevel.js";
 
 import Stats from "../lib/stats.module.js";
 
-const camera = new Camera(new Vector2(1, 1), 40, 70, 1000);
+const camera = new Camera(new Vector2(1, 1), 40, 120, 1000);
 
-const renderer = new WebglRenderer(
-  window.innerWidth,
-  window.innerHeight,
-  camera,
-  document.body
-);
-
-//! move this shit to the Level object!!!!!!!!!!!!!!!!!!!!!!!!!
-//renderer.setCeilingTexture("../assets/floor.jpg");
+const renderer = new WebglRenderer(600, 600, camera, document.body);
 
 //renderer.canvas.style.width = `${200}px`;
 //renderer.canvas.style.height = `${300}px`;
@@ -124,6 +118,15 @@ function moveCamera() {
       case "t":
         renderer.floorOffset += 2;
         break;
+      case "h":
+        camera.fov -= 1;
+        renderer.recalculateDistanceToProjectionPlane();
+        break;
+      case "y":
+        camera.fov += 1;
+        renderer.recalculateDistanceToProjectionPlane();
+        break;
+      //! won't work correctly because things like directionToProjectionPLane in the renderer would need to be recalculated
     }
 
     camera.angle = camera.angle % 360;
@@ -152,6 +155,8 @@ document.addEventListener("keyup", (event) => {
 
 //! IMPORTANT
 
+//NOW. Jsdoc for documentation
+//NOW. Sample game.
 //1. Make sure to only pass intersecting rays to the renderer so it doesn't have to sort through them all on its own.
 //2. Prebaked lighting so the normal of a surface will influence the light based on a light direction (dot product again).
 //3. Rename camera.verticalAngle as it is missleading and not really an angle

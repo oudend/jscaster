@@ -2,7 +2,20 @@ import { TextureLoader } from "../loaders/textureLoader.js";
 import { Vector2 } from "../math/vector2.js";
 import { Color } from "./color.js";
 import { LineSegment } from "./lineSegment.js";
+/**
+ * Class for representing a polygon.
+ *
+ * @class Polygon
+ * @typedef {Polygon}
+ */
 class Polygon {
+  /**
+   * Creates an instance of Polygon.
+   *
+   * @constructor
+   * @param {[]} points - points that the polygon will consist of. Must have a minimum length of 3.
+   * @param {number} [height=100] - Height of the polygon.
+   */
   constructor(points, height = 100) {
     if (points.length < 3)
       throw new Error("Invalid number of points, must be more than 2");
@@ -36,15 +49,34 @@ class Polygon {
   //   }, 0);
   // }
 
+  /**
+   * Sets the texture loader of the polygon which dictates the texture and how it is handled for the polygon.
+   *
+   * @param {TextureLoader} textureLoader
+   * @returns {this}
+   */
   setTextureLoader(textureLoader) {
     this.textureLoader = textureLoader;
     return this;
   }
 
+  /**
+   * Returns the textureLoader instance of the polygon.
+   *
+   * @readonly
+   * @type {*}
+   */
   get texture() {
     return this.textureLoader;
   }
 
+  /**
+   * Converts a list of line segments to a polygon.
+   *
+   * @static
+   * @param {[LineSegment]} segments
+   * @returns {*}
+   */
   static fromLineSegments(segments) {
     const points = [];
 

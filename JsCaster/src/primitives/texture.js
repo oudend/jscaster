@@ -1,7 +1,24 @@
 import { imagedata_to_image } from "../utils.js";
 import { Vector2 } from "../math/vector2.js";
 
+/**
+ * Class representing a texture.
+ *
+ * @class Texture
+ * @typedef {Texture}
+ */
 class Texture {
+  /**
+   * Creates an instance of Texture.
+   *
+   * @constructor
+   * @param {string} src - Source of the image.
+   * @param {number} width - Width of the texture.
+   * @param {number} height - Height of the texture.
+   * @param {function} onload - Function to call when the texture is loaded, used internally by the textureLoader class.
+   * @param {string} [repeat="no-repeat"] - Repeat argument used to determine whether or not a scaled texture should be repeated, default is "no-repeat".
+   * @param {*} matrix - Matrix to be applied to image, used by TextureLoader class to scale and rotate the image.
+   */
   constructor(src, width, height, onload, repeat = "no-repeat", matrix) {
     this.src = src;
 
@@ -19,33 +36,12 @@ class Texture {
     this.image.src = this.src;
     this.canvas = document.createElement("canvas");
     this.ctx = this.canvas.getContext("2d");
-    //this.ctx.imageSmoothingEnabled = false;
     this.image.addEventListener("load", this.#onload.bind(this));
 
     this.loaded = false;
   }
 
-  // column(x) {
-  //   var column = [];
-
-  //   //console.log(this.loaded);
-
-  //   if (x < 0 || x > this.width) throw new Error("index out of bounds");
-
-  //   for (let i = x, l = this.data.length - x; i < l; i += this.width) {
-  //     const r = this.data[i];
-  //     const g = this.data[i + 1];
-  //     const b = this.data[i + 2];
-  //     const a = this.data[i + 3];
-
-  //     column.push([r, g, b, a]);
-  //   }
-
-  //   return column;
-  // }
-
   #onload() {
-    //! use ctx.drawPattern maybe to get repeat?
     this.width = this.desiredWidth ? this.desiredWidth : this.image.width;
     this.height = this.desiredHeight ? this.desiredHeight : this.image.width;
 
@@ -60,17 +56,10 @@ class Texture {
 
     var imagedata = this.ctx.getImageData(0, 0, this.width, this.height);
 
-    // this.data = imagedata.data;
-
     this.loaded = true;
-
-    //console.log(this.data)
-
-    //console.log(imagedata_to_image(imagedata));
     const img = imagedata_to_image(imagedata);
 
     this.pattern = this.ctx.createPattern(this.canvas, this.repeat);
-    // console.log(pattern);
 
     if (this.matrix) this.pattern.setTransform(this.matrix);
 
@@ -83,10 +72,7 @@ class Texture {
 
     this.image = imagedata_to_image(this.imagedata);
 
-    if (this.onload) this.onload(this.image); //this.image);
-
-    // console.log("loaded successfully");
-    // console.log(this.column(1), this.width, this.height, this.height * 4);
+    if (this.onload) this.onload(this.image);
   }
 }
 

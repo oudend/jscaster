@@ -39,44 +39,10 @@ class WebglRenderer {
     //this.debugPoints = [];
 
     this.distanceToProjectionPlane =
-      this.resolution / 2 / Math.tan(degrees_to_radians(this.camera.fov / 2));
+      this.resolution / 2 / Math.tan(degrees_to_radians(this.camera.fov / 2)); //Math.tan(degrees_to_radians(this.camera.fov / 2)); //!this.camera.fov
     //this.angleBetweenRays = this.camera.fov / this.resolution;
 
-    // this.floorTexture = new Texture(
-    //   "../assets/bricks.jpg",
-    //   undefined,
-    //   undefined,
-    //   undefined,
-    //   "repeat"
-    // );
-
-    // this.ceilingTexture = new Texture(
-    //   "../assets/bricks2.jpg",
-    //   undefined,
-    //   undefined,
-    //   undefined,
-    //   "repeat"
-    // );
-
-    // // this.floorTexture = new TextureLoader(
-    // //   "../assets/frame.jpg",
-    // //   undefined,
-    // //   true, //!TODO: IMplement scaleToFit :)
-    // //   true,
-    // //   "repeat",
-    // //   new Vector2(1, 1),
-    // //   new Vector2(0, 0)
-    // // );
-
-    // // this.ceilingTexture = new TextureLoader(
-    // //   "../assets/bricks2.jpg",
-    // //   undefined,
-    // //   true, //!TODO: IMplement scaleToFit :)
-    // //   true,
-    // //   "repeat",
-    // //   new Vector2(1, 1),
-    // //   new Vector2(0, 0)
-    // // );
+    //console.log(this.distanceToProjectionPlane);
 
     this.baseCanvas = document.createElement("canvas");
 
@@ -128,6 +94,7 @@ class WebglRenderer {
       uniform int ceilingTextureLoaded;
 
       uniform float projectionPlaneCenter;
+      uniform float distanceToProjectionPlane;
 
       out vec4 fragColor;
       in vec2 fragCoord;
@@ -159,8 +126,6 @@ class WebglRenderer {
 
         float y = resolution.y - data1.r * 255.;
         float height = -(data1.g * 255.);
-
-        //! clue: try to reverse the way it draws walls so when you try and go up it goes down.
 
         //? gl_FragCoord.y >= resolution.y,  gl_FragCoord.y <= (resolution.y - y) - height
         if(gl_FragCoord.y >= y || gl_FragCoord.y <= y + height - 1.) {
@@ -194,7 +159,7 @@ class WebglRenderer {
           float floorOffset = data5.r * 255.;
           float ceilingHeight = data5.g * 255.;
           float rayAngle = data5.b;
-          float distanceToProjectionPlane = data5.a * 255.;
+          //float distanceToProjectionPlane = data5.a * 255.; //! deprecated
           float finalAngle = data6.r;
           float offsetHeight = data6.g * 255.;
 
@@ -208,62 +173,34 @@ class WebglRenderer {
 
           //?row = gl_FragCoord.y - ( (resolution.y - y) - height);
 
-          float multiplier = resolution.x * (1. / 600.);
+          float multiplier = resolution.x / 300.;//!resolution.x * (1. / 600.);
 
-          float levelWidth = float(levelDimensions.x) ;//!
-          float levelHeight = float(levelDimensions.y);//!
+          float levelWidth = float(levelDimensions.x);// * tan(radians(fov/2.));//!
+          float levelHeight = float(levelDimensions.y);// * tan(radians(fov/2.));//!
 
-          float mysteriousValueX = levelWidth * 0.2;//level=anything, res = (600, 600)
-            float mysteriousValueY = levelHeight * 0.2;//level=anything, res = (600, 600)
+          float mysteriousValueX = levelWidth * 1.;//level=anything, res = (600, 600)
+          float mysteriousValueY = levelHeight * 1.;//level=anything, res = (600, 600)
 
           if(isFloor && floorTextureLoaded == 1) {
-            // float floorTextureXscale = 1200. / float(floorTextureDimensions.x);
-            // float floorTextureYscale = 1200. / float(floorTextureDimensions.y);
-            //?float floorRow = lastBottomOfWall + row;
 
-            float floorRatio = (floorOffset / (row - projectionPlaneCenter));
+            float floorRatio = ((floorOffset) / (row - projectionPlaneCenter));
 
-            //! * 1. x=600
-            //! * .5 x=300
-
-            float floorDiagonalDistance = ((distanceToProjectionPlane * floorRatio * multiplier) * (1.0 / rayAngle));
+            float floorDiagonalDistance = ((distanceToProjectionPlane * floorRatio) * (1. / (rayAngle) ));
 
             float floorXEnd = (floorDiagonalDistance * cos(finalAngle));
             float floorYEnd = (floorDiagonalDistance * sin(finalAngle));
 
-            //! floorTextureDimensions = 1024, 1024
+            float floorTextureTranslationXscale = 2.;
+            float floorTextureTranslationYscale = 2.;
 
-            //!1200 res = * .6
-            //!600 res = 1.2
+            floorXEnd += cameraPosition.x * floorTextureTranslationXscale; 
+            floorYEnd += cameraPosition.y * floorTextureTranslationYscale; 
+            float floorTextureXscale = ( float(floorTextureDimensions.x) / (levelWidth * 1.));
+            float floorTextureYscale = ( float(floorTextureDimensions.y) / (levelHeight * 1.));
 
-            //?float mysteriousValue = 200.; level=(1000, 1000), res = (600, 600)
-            //?float mysteriousValue = 10.; //level=(100, 1000), res = (600, 600)
-
-            //?float mysteriousValueX = 20.; //level=(100, 1000), res = (600, 600)
-            //?float mysteriousValueY = 200.; //level=(100, 1000), res = (600, 600)
-
-            // float mysteriousValueX = levelWidth * 0.2;//level=anything, res = (600, 600)
-            // float mysteriousValueY = levelHeight * 0.2;//level=anything, res = (600, 600)
-            //! mysteriousValue might be right now...
-
-            //!float mysteriousValueX = levelWidth * 0.2;//!level=anything, res = (100, 600)
-            //!float mysteriousValueY = levelHeight * 0.2;//!level=anything, res = (100, 600)
-
-            //?floorTextureTranslationXscale = 1.2;
-            //?floorTextureTranslationYscale = 1.2;
-
-            float floorTextureTranslationXscale = 1.2;
-            float floorTextureTranslationYscale = 1.2;
-
-            floorXEnd += cameraPosition.x * floorTextureTranslationXscale; //?((levelWidth + mysteriousValue)/levelWidth);//?floorTextureTranslationXscale;//cameraPosition.x;//normalizedX * float(floorTextureDimensions.x);//normalizedX * float(floorTextureDimensions.x) / xScale;//normalizedX * float(floorTextureDimensions.x); //?1000 is the width and height of the level
-            floorYEnd += cameraPosition.y * floorTextureTranslationYscale; //?((levelHeight + mysteriousValue)/levelWidth);//?floorTextureTranslationXscale;//cameraPosition.y;//normalizedY * float(floorTextureDimensions.y);//normalizedY * float(floorTextureDimensions.y) / yScale;//normalizedY * float(floorTextureDimensions.y);
-
-            float floorTextureXscale = float(floorTextureDimensions.x) / (levelWidth + mysteriousValueX);
-            float floorTextureYscale = float(floorTextureDimensions.y) / (levelHeight + mysteriousValueY);
-
-            int floorTileX = int( (floorXEnd * floorTextureXscale) / floorTextureScale.x ) % floorTextureDimensions.x;//mod(floorXEnd * floorTextureXscale, float(floorTextureDimensions.x) ) ); 
-            int floorTileY = int( (floorYEnd * floorTextureYscale) / floorTextureScale.y ) % floorTextureDimensions.y; //mod(floorYEnd * floorTextureYscale, float(floorTextureDimensions.y) ) );
-            
+            int floorTileX = int( (floorXEnd * floorTextureXscale) / floorTextureScale.x ) % floorTextureDimensions.x;
+            int floorTileY = int( (floorYEnd * floorTextureYscale) / floorTextureScale.y ) % floorTextureDimensions.y;
+            //! / floorTextureScale.x
             fragColor = texelFetch(floorTexture, ivec2(floorTileX, floorTileY), 0);
             return;
           }
@@ -273,32 +210,24 @@ class WebglRenderer {
             return;
           }
 
-          // float ceilingTextureTranslationXscale = (1200./float(ceilingTextureDimensions.x)) * (600. / resolution.x);
-          // float ceilingTextureTranslationYscale = (1200./float(ceilingTextureDimensions.y)) * (600. / resolution.y);
-
-          // float ceilingTextureXscale = 1200. / float(ceilingTextureDimensions.x);
-          // float ceilingTextureYscale = 1200. / float(ceilingTextureDimensions.y);
-
-          //?float ceilingRow = lastBottomOfWall + row;
-
           float ceilingRatio = (ceilingHeight * 2. - floorOffset) / (projectionPlaneCenter - row);
 
-          float ceilingDiagonalDistance = ((distanceToProjectionPlane * ceilingRatio * multiplier) * (1.0 / rayAngle));
+          float ceilingDiagonalDistance = ((distanceToProjectionPlane * ceilingRatio) * (1.0 / rayAngle));
 
           float ceilingYEnd = (ceilingDiagonalDistance * sin(finalAngle));
           float ceilingXEnd = (ceilingDiagonalDistance * cos(finalAngle));
 
-          float ceilingTextureTranslationXscale = 1.2;
-          float ceilingTextureTranslationYscale = 1.2;
+          float ceilingTextureTranslationXscale = 2.;
+          float ceilingTextureTranslationYscale = 2.;
           
           ceilingXEnd += cameraPosition.x * ceilingTextureTranslationXscale;
           ceilingYEnd += cameraPosition.y * ceilingTextureTranslationYscale;
 
-          float ceilingTextureXscale = float(ceilingTextureDimensions.x) / (levelWidth + mysteriousValueX);
-          float ceilingTextureYscale = float(ceilingTextureDimensions.y) / (levelHeight + mysteriousValueY);
+          float ceilingTextureXscale = float(ceilingTextureDimensions.x) / (levelWidth * 1.);
+          float ceilingTextureYscale = float(ceilingTextureDimensions.y) / (levelHeight * 1.);
 
-          int ceilingTileX = int( (ceilingXEnd * ceilingTextureXscale) / ceilingTextureScale ) % ceilingTextureDimensions.x; //int( mod(ceilingXEnd * ceilingTextureXscale, float(ceilingTextureDimensions.x) ) ); 
-          int ceilingTileY = int( (ceilingYEnd * ceilingTextureYscale) / ceilingTextureScale ) % ceilingTextureDimensions.y; //int( mod(ceilingYEnd * ceilingTextureYscale, float(ceilingTextureDimensions.y) ) );
+          int ceilingTileX = int( (ceilingXEnd * ceilingTextureXscale) / ceilingTextureScale.x ) % ceilingTextureDimensions.x; //int( mod(ceilingXEnd * ceilingTextureXscale, float(ceilingTextureDimensions.x) ) ); 
+          int ceilingTileY = int( (ceilingYEnd * ceilingTextureYscale) / ceilingTextureScale.y ) % ceilingTextureDimensions.y; //int( mod(ceilingYEnd * ceilingTextureYscale, float(ceilingTextureDimensions.y) ) );
 
           fragColor = texelFetch(ceilingTexture, ivec2(ceilingTileX, ceilingTileY), 0);
           return;
@@ -311,7 +240,7 @@ class WebglRenderer {
         if(data3.r == 1.) {
             float textureHeight = data3.b;
 
-            int closestYCoord = int(round( (textureHeight / (-height+1.)) * (gl_FragCoord.y-(y + height)) ));
+            int closestYCoord = int(round( ((textureHeight) / (-height+2.)) * (gl_FragCoord.y-(y + height)+1.) ));
 
             switch(int(data3.a)) {
               // we are not allowed to use i as index to access texture in array in current version of GLSL
@@ -319,7 +248,7 @@ class WebglRenderer {
                 .fill(0)
                 .map(
                   (_, i) => `case ${i}:
-                fragColor = data2.b * vec4(data1.b, data2.r, data2.g, 1.) + texelFetch(polygonTextures[${_}], ivec2(data3.g, closestYCoord), 0);
+                fragColor = data2.b * vec4(data1.b, data2.r, data2.g, 1.) + texelFetch(polygonTextures[${_}], ivec2(data3.g, closestYCoord), 0);          
                 return;
           
                 break;
@@ -332,15 +261,8 @@ class WebglRenderer {
 
         vec4 color = vec4(data1.b, data2.r, data2.g, data2.b);
 
-      
         fragColor = color.rgba;
         return;
-
-        
-
-        // return reddish-purpl
-
-        //fragColor = vec4(col, 1); // return reddish-purple
       }
     `;
 
@@ -388,6 +310,11 @@ class WebglRenderer {
     this.projectionPlaneCenterLocation = this.gl.getUniformLocation(
       this.program,
       "projectionPlaneCenter"
+    );
+
+    this.distanceToProjectionPlaneLocation = this.gl.getUniformLocation(
+      this.program,
+      "distanceToProjectionPlane"
     );
 
     this.resolutionLocation = this.gl.getUniformLocation(
@@ -461,6 +388,11 @@ class WebglRenderer {
 
   get dom() {
     return this.domElement;
+  }
+
+  recalculateDistanceToProjectionPlane() {
+    this.distanceToProjectionPlane =
+      this.resolution / 2 / Math.tan(degrees_to_radians(this.camera.fov / 2));
   }
 
   #getLightIntensity(lights, ray) {
@@ -800,6 +732,11 @@ class WebglRenderer {
     this.gl.uniform1f(
       this.projectionPlaneCenterLocation,
       this.projectionPlaneCenter
+    );
+
+    this.gl.uniform1f(
+      this.distanceToProjectionPlaneLocation,
+      this.distanceToProjectionPlane
     );
 
     this.gl.uniform2fv(this.cameraPositionLocation, [

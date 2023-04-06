@@ -1,8 +1,22 @@
 import { Vector2 } from "./vector2.js";
 import { LineSegment } from "../primitives/lineSegment.js";
 
+/**
+ * Class for representing a ray.
+ *
+ * @class Ray
+ * @typedef {Ray}
+ */
 class Ray {
   // it will be able to shoot a ray from one position to another and check if it collides with a polygon
+  /**
+   * Creates an instance of Ray.
+   *
+   * @constructor
+   * @param {Vector2} [origin=new Vector2()] - Start of ray.
+   * @param {Vector2} [angle=new Vector2()] - 2d direction of ray.
+   * @param {number} [length=100] - Length of ray / how far it will shoot.
+   */
   constructor(origin = new Vector2(), angle = new Vector2(), length = 100) {
     //produce a line segment
 
@@ -19,6 +33,12 @@ class Ray {
     this.lineSegment = new LineSegment(origin, end);
   }
 
+  /**
+   * Checks where and if the ray intersects a lineSegment object.
+   *
+   * @param {LineSegment} lineSegment
+   * @returns {{ intersects: boolean; point: Vector2; normal: number; }}
+   */
   intersects(lineSegment) {
     const intersectionInformation = {
       intersects: false,

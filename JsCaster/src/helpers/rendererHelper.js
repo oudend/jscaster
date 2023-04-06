@@ -1,7 +1,21 @@
 import { LevelHelper } from "./levelHelper.js";
 import { Vector2 } from "../math/vector2.js";
 
+/**
+ * A class for debugging the renderer with a top down view.
+ *
+ * @class RendererHelper
+ * @typedef {RendererHelper}
+ */
 class RendererHelper {
+  /**
+   * Creates an instance of RendererHelper.
+   *
+   * @constructor
+   * @param {*} renderer - The renderer to debug.
+   * @param {*} level - The level to debug.
+   * @param {*} autoReloadTextures - Whether to automatically reload when textures get loaded.
+   */
   constructor(renderer, level, autoReloadTextures) {
     this.renderer = renderer;
 
@@ -23,6 +37,9 @@ class RendererHelper {
     this.levelHelper.render();
   }
 
+  /**
+   * Updates the view.
+   */
   render() {
     this.ctx.drawImage(this.levelHelper.canvas, 0, 0);
 

@@ -3,7 +3,21 @@ import { LineSegment } from "../primitives/lineSegment.js";
 import { Vector2 } from "../math/vector2.js";
 import { degrees_to_radians } from "../utils.js";
 
+/**
+ * A class for representing a camera.
+ *
+ * @class Camera
+ * @typedef {Camera}
+ */
 class Camera {
+  /**
+   * Creates an instance of Camera.
+   *
+   * @constructor
+   * @param {Vector2} position - The 2d position of the camera.
+   * @param {number} [angle=90] - The 2d angle of the camera in degrees.
+   * @param {number} [fov=60] - The Field of View of the camera.
+   */
   constructor(
     position,
     angle = 90, //TODO! switch to radians
@@ -34,6 +48,7 @@ class Camera {
     //const testRays = [];
 
     const polygons = [...level.polygons, level.walls];
+    const sprites = level.sprites;
 
     //console.log(level.polygons, level.walls, level.polygons);
 
@@ -52,7 +67,7 @@ class Camera {
         intersects: false,
         hit: undefined,
         angle: direction2,
-        finalangle: angle, // * (Math.PI / 180), //TODO: check out value
+        finalangle: angle,
         closest: true,
         distance: undefined,
         ray: ray,
@@ -187,5 +202,3 @@ class Camera {
 }
 
 export { Camera };
-
-//TODO: in renderer consider the normal of hitting rays and light them darker the higher the dot product is.

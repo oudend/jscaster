@@ -1,5 +1,18 @@
+/**
+ * A class for debugging the level with a top down view.
+ *
+ * @class LevelHelper
+ * @typedef {LevelHelper}
+ */
 class LevelHelper {
   //TODO: Support sprites.
+  /**
+   * Creates an instance of LevelHelper.
+   *
+   * @constructor
+   * @param {*} level - The level to debug.
+   * @param {boolean} [autoReload=false] - Whether to automatically reload when textures get loaded.
+   */
   constructor(level, autoReload = false) {
     this.level = level;
 
@@ -74,6 +87,9 @@ class LevelHelper {
     this.ctx.stroke();
   }
 
+  /**
+   * Updates the view.
+   */
   render() {
     this.ctx.fillStyle = "black";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);

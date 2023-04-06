@@ -9,6 +9,8 @@ class Sprite {
   ) {
     this.position = position;
     this.texture = texture;
+    this.width = width;
+    this.height = height;
   }
 }
 

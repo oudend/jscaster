@@ -1,6 +1,20 @@
 import { Vector2 } from "../math/vector2.js";
 
+/**
+ * Class for representing a line segment between two points.
+ *
+ * @class LineSegment
+ * @typedef {LineSegment}
+ */
 class LineSegment {
+  /**
+   * Creates an instance of LineSegment.
+   *
+   * @constructor
+   * @param {Vector2} [start=new Vector2()] - First point of the line segment.
+   * @param {Vector2} [end=new Vector2()] - Second point of the line segment.
+   * @param {number} [index=undefined] - Index of the line segment, used internally to wrap textures around polygons.
+   */
   constructor(start = new Vector2(), end = new Vector2(), index = undefined) {
     this.start = start;
     this.end = end;
@@ -15,10 +29,23 @@ class LineSegment {
     this.dy = this.end.y - this.start.y;
   }
 
+  /**
+   * Description placeholder
+   *
+   * @readonly
+   * @type {*}
+   */
   get length() {
     return Vector2.distance(this.start, this.end);
   }
 
+  /**
+   * Converts a polygon to a list of line segments.
+   *
+   * @static
+   * @param {Polygon} polygon
+   * @returns {[]}
+   */
   static PolygonToLineSegments(polygon) {
     const segments = [];
 

@@ -3,8 +3,23 @@ import { Color } from "../primitives/color.js";
 import { Texture } from "../primitives/texture.js";
 import { degrees_to_radians } from "../utils.js";
 
+/**
+ * Deprecated class for rendering using the canvas object.
+ *
+ * @deprecated
+ * @class CanvasRenderer
+ * @typedef {CanvasRenderer}
+ */
 class CanvasRenderer {
   //? no texture support.
+  /**
+   * Creates an instance of CanvasRenderer.
+   *
+   * @constructor
+   * @param {number} [width=100] - Width of the canvas viewport.
+   * @param {number} [height=100] - Height of the canvas viewport.
+   * @param {Camera} camera - Camera to use for rendering.
+   */
   constructor(width = 100, height = 100, camera) {
     this.resolution = width;
     this.camera = camera;
@@ -61,12 +76,20 @@ class CanvasRenderer {
     this.baseCtx = this.baseCanvas.getContext("2d");
   }
 
+  /**
+   * Sets the dom element of the canvas.
+   *
+   * @type {*}
+   */
   set dom(domElement) {
     domElement.appendChild(this.canvas);
 
     this.domElement = domElement;
   }
 
+  /**
+   * Gets the dom element of the canvas.
+   */
   get dom() {
     return this.domElement;
   }
@@ -102,6 +125,14 @@ class CanvasRenderer {
     this.ctx.fillRect(0, 0, this.canvas.width, this.projectionPlaneCenter);
   }
 
+  /**
+   * Returns the appropriate light intensity for a ray based on the lights in the scene.
+   *
+   * @private
+   * @param {Array} lights - Lights in the scene. Currently only supports DirectionalLight.
+   * @param {Ray} ray - ray to look at.
+   * @returns {{ intensity: number, color: any }}
+   */
   #getLightIntensity(lights, ray) {
     var intensity = 0;
 
@@ -383,6 +414,11 @@ class CanvasRenderer {
     );
   }
 
+  /**
+   * Renders the current level.
+   *
+   * @param {Level} level - Level to render.
+   */
   render(level) {
     this.projectionPlaneCenter =
       this.height / 2 + (this.height / 2 / 90) * this.camera.verticalAngle;
