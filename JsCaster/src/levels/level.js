@@ -35,7 +35,7 @@ class Level {
         new Vector2(0, height),
         //new LineSegment(new Vector2(0, height), new Vector2(0, 0)),
       ],
-      ceilingHeight //this.height //TODO: Make input variable
+      ceilingHeight //this.height
     );
 
     this.floorTextureScale = new Vector2(1, 1);
@@ -82,9 +82,10 @@ class Level {
    * @param {string} src - Source of the image.
    * @param {Vector2} [scale=new Vector2(1, 1)] - Scale of the texture.
    */
-  setFloorTexture(src, scale = new Vector2(1, 1)) {
+  setFloorTexture(src, scale = new Vector2(1, 1), offset = new Vector2(0, 0)) {
     this.floorTexture = new TextureLoader(src);
-    this.floorTextureScale = scale;
+    this.floorTextureScale = scale; //TODO: implement offset
+    this.floorTextureOffset = offset;
   }
 
   /**
@@ -93,9 +94,14 @@ class Level {
    * @param {*} src - Source of the image.
    * @param {*} [scale=new Vector2(1, 1)] - Scale of the texture.
    */
-  setCeilingTexture(src, scale = new Vector2(1, 1)) {
+  setCeilingTexture(
+    src,
+    scale = new Vector2(1, 1),
+    offset = new Vector2(0, 0)
+  ) {
     this.ceilingTexture = new TextureLoader(src);
     this.ceilingTextureScale = scale;
+    this.ceilingTextureOffset = offset;
   }
 
   /**

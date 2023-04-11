@@ -90,8 +90,12 @@ class WebglRenderer {
       uniform vec2 ceilingTextureScale;
       uniform vec2 floorTextureScale;
 
+      uniform vec2 floorTextureOffset;
+      uniform vec2 ceilingTextureOffset;
+
       uniform int floorTextureLoaded;
       uniform int ceilingTextureLoaded;
+      uniform int spriteCount;
 
       uniform float projectionPlaneCenter;
       uniform float distanceToProjectionPlane;
@@ -117,12 +121,84 @@ class WebglRenderer {
 
         //float test2 = testArray[test];
 
+
+        //!cool data visualizer
+        // fragColor = texelFetch(data, ivec2(gl_FragCoord.x, (float(5+spriteCount*2)/resolution.y)*gl_FragCoord.y ), 0);
+        // return;
+        //!cool data visualizer
+
         vec4 data1 = texelFetch(data, ivec2(gl_FragCoord.x, 0), 0);
         vec4 data2 = texelFetch(data, ivec2(gl_FragCoord.x, 1), 0);
         vec4 data3 = texelFetch(data, ivec2(gl_FragCoord.x, 2), 0);
         vec4 data4 = texelFetch(data, ivec2(gl_FragCoord.x, 3), 0);
         vec4 data5 = texelFetch(data, ivec2(gl_FragCoord.x, 4), 0);
         vec4 data6 = texelFetch(data, ivec2(gl_FragCoord.x, 5), 0);
+
+
+        // this.webglData[this.resolution * (24 + 8 * j) + webglIndex] = 1;
+        // this.webglData[this.resolution * (24 + 8 * j) + webglIndex + 1] =
+        //   textureX;
+        // this.webglData[this.resolution * (24 + 8 * j) + webglIndex + 2] =
+        //   textureHeight;
+        // this.webglData[this.resolution * (24 + 8 * j) + webglIndex + 3] =
+        //   spriteHeight;
+
+        // this.webglData[this.resolution * (28 + 8 * j) + webglIndex] =
+        //   sprite.texture.textureIndex;
+        // this.webglData[this.resolution * (28 + 8 * j) + webglIndex + 1] =
+        //   spriteHeight;
+
+        if(spriteCount > 0) {
+          for(int i = 0; i < spriteCount; i++) {
+            vec4 spriteData1 = texelFetch(data, ivec2(gl_FragCoord.x, 6 + i * 2), 0);
+            vec4 spriteData2 = texelFetch(data, ivec2(gl_FragCoord.x, 7 + i * 2), 0);
+
+
+            float isSprite = spriteData1.r;
+
+            float textureX = spriteData1.g;
+            float textureHeight = spriteData1.b;
+            int textureIndex = int(spriteData2.r);
+            float spriteHeight = spriteData1.a * 255.;
+            float spriteY = resolution.y - spriteData2.g * 255.;
+            bool isTransparent = spriteData2.b == 1. ? true : false;
+
+            //! need to check if sprite is even on this ray..
+
+            //? temporary solution.. DO NOT PUSH TO PROD
+            if(isSprite == 0.) 
+              continue;
+
+            if(gl_FragCoord.y > spriteY || gl_FragCoord.y < spriteY - spriteHeight)
+              continue;
+
+            int closestYCoord = int(round( ((textureHeight) / (spriteHeight)) * (spriteHeight - (gl_FragCoord.y - (spriteY - spriteHeight)) ) ));
+
+            vec4 spriteColor;
+
+            switch(textureIndex) {
+              // we are not allowed to use i as index to access texture in array in current version of GLSL
+              ${new Array(this.maxTextures)
+                .fill(0)
+                .map(
+                  (_, i) => `case ${i}:
+                spriteColor = texelFetch(polygonTextures[${i}], ivec2(textureX, closestYCoord), 0);
+
+                fragColor = vec4(spriteColor);    
+                
+                if(!(isTransparent && spriteColor.a == 0.))
+                  return;
+          
+                break;
+            `
+                )
+                .join("")}
+              default: break;
+            }
+
+            //return;
+          }
+        }
 
         float y = resolution.y - data1.r * 255.;
         float height = -(data1.g * 255.);
@@ -198,8 +274,8 @@ class WebglRenderer {
             float floorTextureXscale = ( float(floorTextureDimensions.x) / (levelWidth * 1.));
             float floorTextureYscale = ( float(floorTextureDimensions.y) / (levelHeight * 1.));
 
-            int floorTileX = int( (floorXEnd * floorTextureXscale) / floorTextureScale.x ) % floorTextureDimensions.x;
-            int floorTileY = int( (floorYEnd * floorTextureYscale) / floorTextureScale.y ) % floorTextureDimensions.y;
+            int floorTileX = int( abs(floorXEnd * floorTextureXscale + floorTextureOffset.x) / floorTextureScale.x ) % floorTextureDimensions.x;
+            int floorTileY = int( abs(floorYEnd * floorTextureYscale + floorTextureOffset.y) / floorTextureScale.y ) % floorTextureDimensions.y;
             //! / floorTextureScale.x
             fragColor = texelFetch(floorTexture, ivec2(floorTileX, floorTileY), 0);
             return;
@@ -226,8 +302,8 @@ class WebglRenderer {
           float ceilingTextureXscale = float(ceilingTextureDimensions.x) / (levelWidth * 1.);
           float ceilingTextureYscale = float(ceilingTextureDimensions.y) / (levelHeight * 1.);
 
-          int ceilingTileX = int( (ceilingXEnd * ceilingTextureXscale) / ceilingTextureScale.x ) % ceilingTextureDimensions.x; //int( mod(ceilingXEnd * ceilingTextureXscale, float(ceilingTextureDimensions.x) ) ); 
-          int ceilingTileY = int( (ceilingYEnd * ceilingTextureYscale) / ceilingTextureScale.y ) % ceilingTextureDimensions.y; //int( mod(ceilingYEnd * ceilingTextureYscale, float(ceilingTextureDimensions.y) ) );
+          int ceilingTileX = int( abs(ceilingXEnd * ceilingTextureXscale + ceilingTextureOffset.x) / ceilingTextureScale.x ) % ceilingTextureDimensions.x; //int( mod(ceilingXEnd * ceilingTextureXscale, float(ceilingTextureDimensions.x) ) ); 
+          int ceilingTileY = int( abs(ceilingYEnd * ceilingTextureYscale + ceilingTextureOffset.y) / ceilingTextureScale.y ) % ceilingTextureDimensions.y; //int( mod(ceilingYEnd * ceilingTextureYscale, float(ceilingTextureDimensions.y) ) );
 
           fragColor = texelFetch(ceilingTexture, ivec2(ceilingTileX, ceilingTileY), 0);
           return;
@@ -242,13 +318,15 @@ class WebglRenderer {
 
             int closestYCoord = int(round( ((textureHeight) / (-height+2.)) * (gl_FragCoord.y-(y + height)+1.) ));
 
-            switch(int(data3.a)) {
+            int textureIndex = int(data3.a);
+
+            switch(textureIndex) {
               // we are not allowed to use i as index to access texture in array in current version of GLSL
               ${new Array(this.maxTextures)
                 .fill(0)
                 .map(
                   (_, i) => `case ${i}:
-                fragColor = data2.b * vec4(data1.b, data2.r, data2.g, 1.) + texelFetch(polygonTextures[${_}], ivec2(data3.g, closestYCoord), 0);          
+                fragColor = data2.b * vec4(data1.b, data2.r, data2.g, 1.) + texelFetch(polygonTextures[${i}], ivec2(data3.g, closestYCoord), 0);          
                 return;
           
                 break;
@@ -265,6 +343,21 @@ class WebglRenderer {
         return;
       }
     `;
+    //TODO: replace polygonTextures with separate variables for infinite  texture limit.
+
+    //     console.log(
+    //       new Array(this.maxTextures)
+    //         .fill(0)
+    //         .map(
+    //           (_, i) => `case ${i}:
+    //     fragColor = data2.b * vec4(data1.b, data2.r, data2.g, 1.) + texelFetch(polygonTextures[${i}], ivec2(data3.g, closestYCoord), 0);
+    //     return;
+
+    //     break;
+    // `
+    //         )
+    //         .join("")
+    //     );
 
     this.loadedTextureCount = [];
 
@@ -297,11 +390,23 @@ class WebglRenderer {
       "floorTextureScale"
     );
 
+    this.ceilingTextureOffsetLocation = this.gl.getUniformLocation(
+      this.program,
+      "ceilingTextureOffset"
+    );
+    this.floorTextureOffsetLocation = this.gl.getUniformLocation(
+      this.program,
+      "floorTextureOffset"
+    );
+
     this.floorTextureDimensionLocation = this.gl.getUniformLocation(
       this.program,
       "floorTextureDimensions"
     );
-
+    this.spriteCountLocation = this.gl.getUniformLocation(
+      this.program,
+      "spriteCount"
+    );
     this.ceilingTextureDimensionLocation = this.gl.getUniformLocation(
       this.program,
       "ceilingTextureDimensions"
@@ -431,6 +536,7 @@ class WebglRenderer {
     if (!ray.intersects) return; //contingency
 
     const polygon = ray.polygon;
+    const sprites = ray.spriteInfo;
 
     const x = ray.x;
 
@@ -466,7 +572,7 @@ class WebglRenderer {
       );
     }
 
-    const webglIndex = x * 3;
+    const webglIndex = x * 4;
 
     if (
       (level.floorTexture.loaded || level.ceilingTexture.loaded) &&
@@ -532,41 +638,106 @@ class WebglRenderer {
         this.projectionPlaneCenter + fakeOffsetHeight / 2
       );
 
-      this.webglData[this.resolution * 9 + webglIndex] = 1;
-      this.webglData[this.resolution * 9 + webglIndex + 1] =
+      this.webglData[this.resolution * 12 + webglIndex] = 1;
+      this.webglData[this.resolution * 12 + webglIndex + 1] =
         lastBottomOfWall / 255;
-      this.webglData[this.resolution * 9 + webglIndex + 2] =
+      this.webglData[this.resolution * 12 + webglIndex + 2] =
         lastTopOfWall / 255;
-      this.webglData[this.resolution * 9 + webglIndex + 3] =
+      this.webglData[this.resolution * 12 + webglIndex + 3] =
         this.projectionPlaneCenter / 255;
 
       //! projectionPlaneCenter doesn't make any difference even if it's 1.
 
-      this.webglData[this.resolution * 12 + webglIndex] =
+      this.webglData[this.resolution * 16 + webglIndex] =
         this.floorOffset / 255;
-      this.webglData[this.resolution * 12 + webglIndex + 1] =
+      this.webglData[this.resolution * 16 + webglIndex + 1] =
         level.ceilingHeight / 255;
-      this.webglData[this.resolution * 12 + webglIndex + 2] = Math.cos(
+      this.webglData[this.resolution * 16 + webglIndex + 2] = Math.cos(
         ray.angle
       );
-      this.webglData[this.resolution * 12 + webglIndex + 3] =
+      this.webglData[this.resolution * 16 + webglIndex + 3] =
         this.distanceToProjectionPlane / 255;
 
       //console.log(degrees_to_radians(ray.finalangle), ray.finalangle);
       //debugger;
 
-      this.webglData[this.resolution * 15 + webglIndex] = degrees_to_radians(
+      this.webglData[this.resolution * 20 + webglIndex] = degrees_to_radians(
         ray.finalangle
       );
-      this.webglData[this.resolution * 15 + webglIndex + 1] =
+      this.webglData[this.resolution * 20 + webglIndex + 1] =
         offsetHeight / 255;
-      this.webglData[this.resolution * 15 + webglIndex + 2] = 0;
-      this.webglData[this.resolution * 15 + webglIndex + 3] = 0;
     }
 
     this.webglData[webglIndex] =
       (this.projectionPlaneCenter + offsetHeight / 2 - wallHeight) / 255;
     this.webglData[webglIndex + 1] = wallHeight / 255;
+
+    if (sprites.length > 0) {
+      for (let j = 0; j < sprites.length; j++) {
+        const sprite = sprites[j].sprite;
+        const spriteInfo = ray.spriteInfo[j];
+
+        if (!sprite.texture.loaded) continue;
+
+        var point = Math.floor(
+          Vector2.distance(spriteInfo.lineSegment.start, spriteInfo.hit)
+        );
+
+        const texture = sprite.texture.textureImage;
+
+        if (sprite.texture.textureIndex === undefined) {
+          //console.log("No bitches?", texture);
+          imageToTexture(
+            this.gl,
+            texture,
+            this.gl.TEXTURE0 + this.loadedTextureCount.length + 3
+          );
+
+          sprite.texture.textureIndex = this.loadedTextureCount.length;
+          this.loadedTextureCount.push(this.loadedTextureCount.length + 3);
+        }
+
+        //! should be scaled to fit.
+
+        const length = spriteInfo.lineSegment.length;
+
+        textureX = (texture.width / length) * point;
+        textureHeight = texture.height;
+
+        const spriteHeight =
+          (sprite.height / spriteInfo.distance / Math.cos(ray.angle)) *
+          this.distanceToProjectionPlane;
+
+        const spriteOffsetHeight =
+          ((this.floorOffset - sprite.y) /
+            spriteInfo.distance /
+            Math.cos(ray.angle)) *
+          this.distanceToProjectionPlane;
+
+        //? sprite information
+        this.webglData[this.resolution * (24 + 8 * j) + webglIndex] = 1;
+        this.webglData[this.resolution * (24 + 8 * j) + webglIndex + 1] =
+          textureX;
+        this.webglData[this.resolution * (24 + 8 * j) + webglIndex + 2] =
+          textureHeight;
+        this.webglData[this.resolution * (24 + 8 * j) + webglIndex + 3] =
+          spriteHeight / 255;
+
+        //TODO: maybe rethink this idk.
+
+        this.webglData[this.resolution * (28 + 8 * j) + webglIndex] =
+          sprite.texture.textureIndex;
+        this.webglData[this.resolution * (28 + 8 * j) + webglIndex + 1] =
+          (this.projectionPlaneCenter + spriteOffsetHeight / 2 - spriteHeight) /
+          255;
+        this.webglData[this.resolution * (28 + 8 * j) + webglIndex + 2] =
+          sprite.transparent ? 1 : 0;
+
+        //console.log(j);
+
+        //! //TODO: also needs the sprite.y
+      }
+    }
 
     if (polygon.texture && polygon.texture.loaded) {
       var point = Math.floor(Vector2.distance(ray.lineSegment.start, ray.hit));
@@ -584,7 +755,6 @@ class WebglRenderer {
         polygon.texture.textureIndex = this.loadedTextureCount.length;
         this.loadedTextureCount.push(this.loadedTextureCount.length + 3);
       }
-
       if (polygon.texture.wrap) {
         const offset =
           ray.lineSegment.index > 0
@@ -630,16 +800,16 @@ class WebglRenderer {
       //   );
       // }
 
-      this.webglData[this.resolution * 6 + webglIndex] = 1;
-      this.webglData[this.resolution * 6 + webglIndex + 1] = textureX;
-      this.webglData[this.resolution * 6 + webglIndex + 2] = textureHeight;
-      this.webglData[this.resolution * 6 + webglIndex + 3] =
+      this.webglData[this.resolution * 8 + webglIndex] = 1;
+      this.webglData[this.resolution * 8 + webglIndex + 1] = textureX;
+      this.webglData[this.resolution * 8 + webglIndex + 2] = textureHeight;
+      this.webglData[this.resolution * 8 + webglIndex + 3] =
         polygon.texture.textureIndex; //! texture index.
 
       this.webglData[webglIndex + 2] = lightColor.r / 255;
-      this.webglData[this.resolution * 3 + webglIndex] = lightColor.g / 255;
-      this.webglData[this.resolution * 3 + webglIndex + 1] = lightColor.b / 255;
-      this.webglData[this.resolution * 3 + webglIndex + 2] = intensity;
+      this.webglData[this.resolution * 4 + webglIndex] = lightColor.g / 255;
+      this.webglData[this.resolution * 4 + webglIndex + 1] = lightColor.b / 255;
+      this.webglData[this.resolution * 4 + webglIndex + 2] = intensity;
 
       //! needs lightColor.rgba to color the walls correctly.
 
@@ -651,9 +821,9 @@ class WebglRenderer {
     // this.webglData[webglIndex + 1] = wallHeight / 255;
 
     this.webglData[webglIndex + 2] = color.r / 255;
-    this.webglData[this.resolution * 3 + webglIndex] = color.g / 255;
-    this.webglData[this.resolution * 3 + webglIndex + 1] = color.b / 255;
-    this.webglData[this.resolution * 3 + webglIndex + 2] = color.a / 255;
+    this.webglData[this.resolution * 4 + webglIndex] = color.g / 255;
+    this.webglData[this.resolution * 4 + webglIndex + 1] = color.b / 255;
+    this.webglData[this.resolution * 4 + webglIndex + 2] = color.a / 255;
 
     // this.ctx.fillRect(
     //   x,
@@ -677,7 +847,9 @@ class WebglRenderer {
 
     this.textureWraps = {};
 
-    this.webglData = new Float32Array(this.resolution * 18);
+    this.webglData = new Float32Array(
+      this.resolution * (24 + level.sprites.length * 4 * 2)
+    ); //?18);
 
     const rays = this.camera.castRays(
       level,
@@ -689,13 +861,13 @@ class WebglRenderer {
       this.gl,
       this.webglData,
       this.resolution,
-      6,
+      6 + level.sprites.length * 2,
       this.gl.TEXTURE0,
-      this.gl.RGB32F,
-      this.gl.RGB
+      this.gl.RGBA32F,
+      this.gl.RGBA
     );
 
-    this.baseCtx.putImageData(this.baseSprite, 0, 0);
+    //this.baseCtx.putImageData(this.baseSprite, 0, 0);
     //this.ctx.drawImage(this.baseCanvas, 0, 0);
 
     //this.ctx.putImageData(this.baseSprite, 0, 0);
@@ -727,7 +899,7 @@ class WebglRenderer {
     this.gl.uniform1i(this.floorTextureLocation, 1);
     this.gl.uniform1i(this.ceilingTextureLocation, 2);
 
-    this.gl.uniform1i(this.loadedTextureLocation, this.loadedTextureCount);
+    this.gl.uniform1iv(this.loadedTextureLocation, this.loadedTextureCount);
 
     this.gl.uniform1f(
       this.projectionPlaneCenterLocation,
@@ -758,6 +930,17 @@ class WebglRenderer {
       level.ceilingTextureScale.y,
     ]);
 
+    this.gl.uniform2fv(this.floorTextureOffsetLocation, [
+      level.floorTextureOffset.x,
+      level.floorTextureOffset.y,
+    ]);
+    this.gl.uniform2fv(this.ceilingTextureOffsetLocation, [
+      level.ceilingTextureOffset.x,
+      level.ceilingTextureOffset.y,
+    ]);
+
+    //ceilingTextureOffsetLocation
+
     //this.floorTextureScaleLocation
 
     this.gl.uniform2iv(this.levelDimensionLocation, [
@@ -773,6 +956,7 @@ class WebglRenderer {
       this.ceilingTextureLoadedLocation,
       this.ceilingTextureLoaded ? 1 : 0
     );
+    this.gl.uniform1i(this.spriteCountLocation, level.sprites.length);
 
     //levelDimensionLocation
 

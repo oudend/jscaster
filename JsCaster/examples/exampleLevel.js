@@ -5,6 +5,7 @@ import {
   TextureLoader,
   DirectionalLight,
   Color,
+  Sprite,
 } from "../src/jscaster.js";
 
 const exampleLevel = new Level(1000, 1000, 100);
@@ -18,8 +19,37 @@ const defaultTextureLoader = new TextureLoader(
   new Vector2(0.25, 1)
 );
 
-exampleLevel.setFloorTexture("../assets/shrek2.jpg", new Vector2(0.5, 0.5));
-exampleLevel.setCeilingTexture("../assets/shrek2.jpg", new Vector2(0.5, 0.5));
+const temporaryTextureLoader = new TextureLoader(
+  "../assets/bricks.jpg",
+  false,
+  true,
+  false,
+  "repeat",
+  new Vector2(1, 1)
+);
+
+const spriteTextureLoader = new TextureLoader("../assets/Shrek.png");
+
+exampleLevel.setFloorTexture(
+  "../assets/bricks.jpg",
+  new Vector2(0.5, 0.5),
+  new Vector2(0, 0)
+);
+exampleLevel.setCeilingTexture("../assets/bricks.jpg", new Vector2(0.5, 0.5));
+
+//! add floorTexture offset btw
+
+exampleLevel.addSprite(
+  new Sprite(spriteTextureLoader, new Vector2(200, 300), 0, 100, 100, true)
+);
+
+//! small disclaimer that everything will break if there are more than 10 textures :)
+
+exampleLevel.addSprite(
+  new Sprite(spriteTextureLoader, new Vector2(400, 400), 0, 100, 100, true)
+);
+
+console.log(exampleLevel.sprites);
 
 // exampleLevel.addPolygon(
 //   new Polygon(
@@ -29,14 +59,14 @@ exampleLevel.setCeilingTexture("../assets/shrek2.jpg", new Vector2(0.5, 0.5));
 // );
 
 exampleLevel.addPolygon(
-  new Polygon.circle(new Vector2(100, 200), 50, 30).setTextureLoader(
+  new Polygon.circle(new Vector2(100, 200), 50, 10).setTextureLoader(
     defaultTextureLoader
   )
 );
 
 exampleLevel.addPolygon(
   new Polygon.square(new Vector2(400, 200), 100).setTextureLoader(
-    defaultTextureLoader
+    temporaryTextureLoader
   )
 );
 

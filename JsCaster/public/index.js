@@ -18,7 +18,7 @@ import Stats from "../lib/stats.module.js";
 
 const camera = new Camera(new Vector2(1, 1), 40, 120, 1000);
 
-const renderer = new WebglRenderer(600, 600, camera, document.body);
+const renderer = new WebglRenderer(1200, 1200, camera, document.body);
 
 //renderer.canvas.style.width = `${200}px`;
 //renderer.canvas.style.height = `${300}px`;
@@ -62,6 +62,9 @@ function animate() {
   stats.begin();
   rendererHelper.render();
   stats.end();
+
+  //exampleLevel.floorTextureOffset.add(new Vector2(1, 1));
+  //exampleLevel.ceilingTextureOffset.subtract(new Vector2(1, 1));
 
   requestAnimationFrame(animate);
 }
@@ -129,6 +132,8 @@ function moveCamera() {
       //! won't work correctly because things like directionToProjectionPLane in the renderer would need to be recalculated
     }
 
+    camera.fov = Math.min(Math.max(camera.fov, 10), 170);
+
     camera.angle = camera.angle % 360;
   });
 }
@@ -164,3 +169,4 @@ document.addEventListener("keyup", (event) => {
 //! FUTURE IDEAS
 
 //1. Possibly divide all polygons in a level to a grid or something, or put each point in a grid cell for more efficient raycasting with only necessary points.
+//2. A multiTextureLoader with some index or something that lets you switch the textures of the objects assigned to the loader in real time.

@@ -34,8 +34,6 @@ class Camera {
   }
 
   castRays(level, rays, onrayhit) {
-    //TODO: check when "canvas wall" is hit and based on that somehow draw the floor from there and down?
-
     //raycount is the same a resolution.
     const start = this.angle - this.fov / 2;
     const end = this.angle + this.fov / 2;
@@ -76,7 +74,8 @@ class Camera {
         lineSegment: undefined,
         x: i,
         canvasWall: false,
-      };
+        spriteInfo: [],
+      }; //TODO: this could probably be removed..
 
       if (polygons.length === 0) break; //! test
 
@@ -91,6 +90,7 @@ class Camera {
         const lineSegments = polygon.segments;
 
         if (polygon.height != polygons[Math.max(0, j - 1)].height)
+          //TODO: fix this monstrosity
           heightSort = true;
 
         for (var k = 0; k < lineSegments.length; k++) {
@@ -116,6 +116,7 @@ class Camera {
             polygon: polygon,
             lineSegment: lineSegment,
             x: i,
+            spriteInfo: [],
           };
 
           transparencyData.push(lineSegmentRayInformation);
@@ -136,12 +137,47 @@ class Camera {
         //return rayHits;
       }
 
+      for (var j = 0; j < sprites.length; j++) {
+        const sprite = sprites[j];
+
+        // console.log(sprite, sprite.getLineSegment(this.angle));
+
+        // debugger;
+
+        const lineSegment = sprite.getLineSegment(this.angle);
+
+        const intersection = ray.intersects(lineSegment);
+
+        if (!intersection.intersects) continue;
+
+        const distance = Vector2.distance(intersection.point, this.position);
+
+        if (distance < closestHitDistance) {
+          rayInformation.spriteInfo.push({
+            distance: distance,
+            hit: intersection.point,
+            lineSegment: lineSegment,
+            sprite: sprite,
+          });
+          //? this means that the intersected part of the sprite is in front of the walls and should be rendered
+        } //! REWORK ALL THIS SHIT
+      }
+
+      if (rayInformation.spriteInfo.length > 1) {
+        rayInformation.spriteInfo = rayInformation.spriteInfo.sort(
+          (a, b) => a.distance - b.distance
+        );
+      }
+      // here all the sprites will be sorted based on distance.
+
       const transparentPass = transparencyData.sort(
         (a, b) => b.distance - a.distance
       );
 
       if (!rayInformation.intersects) continue;
 
+      //TODO: This wont work with the sprites so needs to be rethinked.
+      //! Probably doesn't work with shaders either
       if (
         rayInformation.polygon.texture &&
         rayInformation.polygon.texture.transparent
