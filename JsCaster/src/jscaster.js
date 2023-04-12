@@ -3,6 +3,7 @@ export { LevelHelper } from "./helpers/levelHelper.js";
 export { RendererHelper } from "./helpers/rendererHelper.js";
 export { Level } from "./levels/level.js";
 export { DirectionalLight } from "../src/lights/directionalLight.js";
+export { MultiTextureLoader } from "./loaders/multiTextureLoader.js";
 export { TextureLoader } from "./loaders/textureLoader.js";
 export { Ray } from "./math/ray.js";
 export { Vector2 } from "./math/vector2.js";

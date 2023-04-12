@@ -532,6 +532,33 @@ class WebglRenderer {
     return { intensity: intensity, color: color };
   }
 
+  #loadTexture(textureLoader) {
+    if (textureLoader.isMultiTextureLoader === true) {
+      if (textureLoader.textureIndex !== undefined) return;
+
+      //console.log("loading multiTextureLoader");
+      //textureLoader.textureIndex = this.loadedTextureCount.length;
+
+      for (let subTextureLoader of textureLoader.textureLoaders) {
+        this.#loadTexture(subTextureLoader);
+      }
+
+      return;
+    }
+
+    if (textureLoader.textureIndex === undefined) {
+      //console.log("No bitches?", texture);
+      imageToTexture(
+        this.gl,
+        textureLoader.textureImage,
+        this.gl.TEXTURE0 + this.loadedTextureCount.length + 3
+      );
+
+      textureLoader.textureIndex = this.loadedTextureCount.length;
+      this.loadedTextureCount.push(this.loadedTextureCount.length + 3);
+    }
+  }
+
   #render(level, ray) {
     if (!ray.intersects) return; //contingency
 
@@ -685,17 +712,18 @@ class WebglRenderer {
 
         const texture = sprite.texture.textureImage;
 
-        if (sprite.texture.textureIndex === undefined) {
-          //console.log("No bitches?", texture);
-          imageToTexture(
-            this.gl,
-            texture,
-            this.gl.TEXTURE0 + this.loadedTextureCount.length + 3
-          );
+        this.#loadTexture(sprite.texture);
+        // if (sprite.texture.textureIndex === undefined) {
+        //   //console.log("No bitches?", texture);
+        //   imageToTexture(
+        //     this.gl,
+        //     texture,
+        //     this.gl.TEXTURE0 + this.loadedTextureCount.length + 3
+        //   );
 
-          sprite.texture.textureIndex = this.loadedTextureCount.length;
-          this.loadedTextureCount.push(this.loadedTextureCount.length + 3);
-        }
+        //   sprite.texture.textureIndex = this.loadedTextureCount.length;
+        //   this.loadedTextureCount.push(this.loadedTextureCount.length + 3);
+        // }
 
         //! should be scaled to fit.
 
@@ -744,17 +772,18 @@ class WebglRenderer {
 
       const texture = polygon.texture.textureImage;
 
-      if (polygon.texture.textureIndex === undefined) {
-        //console.log("No bitches?", texture);
-        imageToTexture(
-          this.gl,
-          texture,
-          this.gl.TEXTURE0 + this.loadedTextureCount.length + 3
-        );
+      this.#loadTexture(polygon.texture);
+      // if (polygon.texture.textureIndex === undefined) {
+      //   //console.log("No bitches?", texture);
+      //   imageToTexture(
+      //     this.gl,
+      //     texture,
+      //     this.gl.TEXTURE0 + this.loadedTextureCount.length + 3
+      //   );
 
-        polygon.texture.textureIndex = this.loadedTextureCount.length;
-        this.loadedTextureCount.push(this.loadedTextureCount.length + 3);
-      }
+      //   polygon.texture.textureIndex = this.loadedTextureCount.length;
+      //   this.loadedTextureCount.push(this.loadedTextureCount.length + 3);
+      // }
       if (polygon.texture.wrap) {
         const offset =
           ray.lineSegment.index > 0

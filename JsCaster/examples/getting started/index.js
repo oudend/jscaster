@@ -6,15 +6,15 @@ import {
   LevelHelper,
   RendererHelper,
   WebglRenderer,
-} from "../src/jscaster.js";
+} from "../../src/jscaster.js";
 
 //!documentation build --document-exported ./JsCaster/src/jscaster.js -f html -o ./JsCaster/docs
 
-import { degrees_to_radians } from "../src/utils.js";
+import { degrees_to_radians } from "../../src/utils.js";
 
-import { exampleLevel } from "../examples/exampleLevel.js";
+import { exampleLevel } from "../levels/exampleLevel.js";
 
-import Stats from "../lib/stats.module.js";
+import Stats from "../../lib/stats.module.js";
 
 const camera = new Camera(new Vector2(1, 1), 40, 120, 1000);
 
@@ -128,6 +128,12 @@ function moveCamera() {
       case "y":
         camera.fov += 1;
         renderer.recalculateDistanceToProjectionPlane();
+        break;
+      case "0":
+        exampleLevel.sprites[0].textureLoader.setTextureLoader(0);
+        break;
+      case "1":
+        exampleLevel.sprites[0].textureLoader.setTextureLoader(1);
         break;
       //! won't work correctly because things like directionToProjectionPLane in the renderer would need to be recalculated
     }

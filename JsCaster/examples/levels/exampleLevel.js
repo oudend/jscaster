@@ -3,15 +3,16 @@ import {
   Vector2,
   Polygon,
   TextureLoader,
+  MultiTextureLoader,
   DirectionalLight,
   Color,
   Sprite,
-} from "../src/jscaster.js";
+} from "../../src/jscaster.js";
 
 const exampleLevel = new Level(1000, 1000, 100);
 
 const defaultTextureLoader = new TextureLoader(
-  "../assets/bricks2.jpg",
+  "../../assets/bricks2.jpg",
   false,
   true,
   true,
@@ -20,7 +21,7 @@ const defaultTextureLoader = new TextureLoader(
 );
 
 const temporaryTextureLoader = new TextureLoader(
-  "../assets/bricks.jpg",
+  "../../assets/bricks.jpg",
   false,
   true,
   false,
@@ -28,19 +29,27 @@ const temporaryTextureLoader = new TextureLoader(
   new Vector2(1, 1)
 );
 
-const spriteTextureLoader = new TextureLoader("../assets/Shrek.png");
+const spriteTextureLoader = new TextureLoader("../../assets/Shrek.png");
+
+const spriteTextureLoader2 = new MultiTextureLoader([
+  new TextureLoader("../../assets/Shrek.png"),
+  new TextureLoader("../../assets/shrek3.png"),
+]);
 
 exampleLevel.setFloorTexture(
-  "../assets/bricks.jpg",
+  "../../assets/bricks.jpg",
   new Vector2(0.5, 0.5),
   new Vector2(0, 0)
 );
-exampleLevel.setCeilingTexture("../assets/bricks.jpg", new Vector2(0.5, 0.5));
+exampleLevel.setCeilingTexture(
+  "../../assets/bricks.jpg",
+  new Vector2(0.5, 0.5)
+);
 
 //! add floorTexture offset btw
 
 exampleLevel.addSprite(
-  new Sprite(spriteTextureLoader, new Vector2(200, 300), 0, 100, 100, true)
+  new Sprite(spriteTextureLoader2, new Vector2(200, 300), 0, 100, 100, true)
 );
 
 //! small disclaimer that everything will break if there are more than 10 textures :)
