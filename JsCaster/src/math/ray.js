@@ -14,10 +14,10 @@ class Ray {
    *
    * @constructor
    * @param {Vector2} [origin=new Vector2()] - Start of ray.
-   * @param {Vector2} [angle=new Vector2()] - 2d direction of ray.
+   * @param {Vector2} [angle=0] - angle of ray in degrees.
    * @param {number} [length=100] - Length of ray / how far it will shoot.
    */
-  constructor(origin = new Vector2(), angle = new Vector2(), length = 100) {
+  constructor(origin = new Vector2(), angle = 0, length = 100) {
     //produce a line segment
 
     this.angle = angle;

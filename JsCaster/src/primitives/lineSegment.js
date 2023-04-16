@@ -27,6 +27,8 @@ class LineSegment {
 
     this.dx = this.end.x - this.start.x;
     this.dy = this.end.y - this.start.y;
+
+    this.length = Vector2.distance(this.start, this.end);
   }
 
   /**
@@ -35,9 +37,9 @@ class LineSegment {
    * @readonly
    * @type {*}
    */
-  get length() {
-    return Vector2.distance(this.start, this.end);
-  }
+  // get length() {
+  //   return Vector2.distance(this.start, this.end);
+  // }
 
   /**
    * Converts a polygon to a list of line segments.

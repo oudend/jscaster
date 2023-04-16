@@ -9,7 +9,7 @@ import {
   Sprite,
 } from "../../src/jscaster.js";
 
-const exampleLevel = new Level(1000, 1000, 100);
+const exampleLevel = new Level(1000, 1000, 300);
 
 const defaultTextureLoader = new TextureLoader(
   "../../assets/bricks2.jpg",

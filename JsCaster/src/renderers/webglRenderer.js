@@ -75,6 +75,8 @@ class WebglRenderer {
       uniform vec2 cameraPosition;
 
       uniform sampler2D data;
+      uniform sampler2D spriteData;
+      uniform sampler2D floorAndCeilingData;
 
       uniform sampler2D polygonTextures[numTextures];
 
@@ -103,55 +105,45 @@ class WebglRenderer {
       out vec4 fragColor;
       in vec2 fragCoord;
 
-      //uniform sampler2D
-
       void main() {
 
-        //fragColor = texelFetch(polygonTextures[0], ivec2(gl_FragCoord), 0);
-        //return;
+        vec4 wallInformation = texelFetch(data, ivec2(gl_FragCoord.x, 0), 0);
 
-        // gl_FragColor is a special variable a fragment shader
-        // is responsible for setting
+        int wallCount = int(wallInformation.r);
 
-        //vec2 uv = gl_FragCoord.xy / u_resolution;
+        vec4 firstData1 = texelFetch(data, ivec2(gl_FragCoord.x, 1), 0);
+        // // vec4 data2 = texelFetch(data, ivec2(gl_FragCoord.x, 2), 0);
+        // // vec4 data3 = texelFetch(data, ivec2(gl_FragCoord.x, 3), 0);
 
-        //int test = int(gl_FragCoord.x);
+        vec4 lastData1 = texelFetch(data, ivec2(gl_FragCoord.x, 1 +  3 * (wallCount - 1) ), 0);
 
-        //vec3 col = 0.5 + 0.5*cos(u_time+uv.xyx+vec3(0,2,4));
+        float lastY = 0.;
 
-        //float test2 = testArray[test];
+        //! THIS SUCKS FIX THIS PLEASE I BEG OF YOU
+        for(int i = 1; i < wallCount; i++) {
+          vec4 wallData1 = texelFetch(data, ivec2(gl_FragCoord.x, 1 + 3 * i ), 0);
+
+          float tempY = resolution.y - wallData1.r * 255.;
+
+          if(tempY > lastY) {
+            lastY = tempY;
+          }
+        }
+
+        float firstY = resolution.y - firstData1.r * 255.;
+        float firstHeight = -(firstData1.g * 255.);
+
+        lastY = max(firstY, lastY);
 
 
-        //!cool data visualizer
-        // fragColor = texelFetch(data, ivec2(gl_FragCoord.x, (float(5+spriteCount*2)/resolution.y)*gl_FragCoord.y ), 0);
-        // return;
-        //!cool data visualizer
-
-        vec4 data1 = texelFetch(data, ivec2(gl_FragCoord.x, 0), 0);
-        vec4 data2 = texelFetch(data, ivec2(gl_FragCoord.x, 1), 0);
-        vec4 data3 = texelFetch(data, ivec2(gl_FragCoord.x, 2), 0);
-        vec4 data4 = texelFetch(data, ivec2(gl_FragCoord.x, 3), 0);
-        vec4 data5 = texelFetch(data, ivec2(gl_FragCoord.x, 4), 0);
-        vec4 data6 = texelFetch(data, ivec2(gl_FragCoord.x, 5), 0);
-
-
-        // this.webglData[this.resolution * (24 + 8 * j) + webglIndex] = 1;
-        // this.webglData[this.resolution * (24 + 8 * j) + webglIndex + 1] =
-        //   textureX;
-        // this.webglData[this.resolution * (24 + 8 * j) + webglIndex + 2] =
-        //   textureHeight;
-        // this.webglData[this.resolution * (24 + 8 * j) + webglIndex + 3] =
-        //   spriteHeight;
-
-        // this.webglData[this.resolution * (28 + 8 * j) + webglIndex] =
-        //   sprite.texture.textureIndex;
-        // this.webglData[this.resolution * (28 + 8 * j) + webglIndex + 1] =
-        //   spriteHeight;
+        vec4 floorAndCeilingData1 = texelFetch(floorAndCeilingData, ivec2(gl_FragCoord.x, 0), 0);
+        vec4 floorAndCeilingData2 = texelFetch(floorAndCeilingData, ivec2(gl_FragCoord.x, 1), 0);
+        vec4 floorAndCeilingData3 = texelFetch(floorAndCeilingData, ivec2(gl_FragCoord.x, 2), 0);
 
         if(spriteCount > 0) {
           for(int i = 0; i < spriteCount; i++) {
-            vec4 spriteData1 = texelFetch(data, ivec2(gl_FragCoord.x, 6 + i * 2), 0);
-            vec4 spriteData2 = texelFetch(data, ivec2(gl_FragCoord.x, 7 + i * 2), 0);
+            vec4 spriteData1 = texelFetch(spriteData, ivec2(gl_FragCoord.x, 0 + i * 2), 0);
+            vec4 spriteData2 = texelFetch(spriteData, ivec2(gl_FragCoord.x, 1 + i * 2), 0);
 
 
             float isSprite = spriteData1.r;
@@ -162,8 +154,6 @@ class WebglRenderer {
             float spriteHeight = spriteData1.a * 255.;
             float spriteY = resolution.y - spriteData2.g * 255.;
             bool isTransparent = spriteData2.b == 1. ? true : false;
-
-            //! need to check if sprite is even on this ray..
 
             //? temporary solution.. DO NOT PUSH TO PROD
             if(isSprite == 0.) 
@@ -200,52 +190,23 @@ class WebglRenderer {
           }
         }
 
-        float y = resolution.y - data1.r * 255.;
-        float height = -(data1.g * 255.);
-
         //? gl_FragCoord.y >= resolution.y,  gl_FragCoord.y <= (resolution.y - y) - height
-        if(gl_FragCoord.y >= y || gl_FragCoord.y <= y + height - 1.) {
-          bool isFloorAndCeilingLoaded = data4.r == 1.;
+        if(gl_FragCoord.y >= lastY || gl_FragCoord.y <= firstY + firstHeight - 1.) {
+          bool isFloorAndCeilingLoaded = floorAndCeilingData1.r == 1.;
 
-          // if() {
-          //   fragColor = vec4(0., 0., 0., 1.);
-          //   return;
-          // }
-          
-          // if(!isFloorAndCeilingLoaded) {
-          //   fragColor = vec4(0., 0., 0., 1.);
-          //   return;
-          // }
+          bool isFloor = gl_FragCoord.y <= firstY;
 
-          bool isFloor = gl_FragCoord.y <= y;
+          float lastBottomOfWall = floorAndCeilingData1.g * 255.;
+          float lastTopOfWall = floorAndCeilingData1.b * 255.;
+          //float projectionPlaneCenter = floorAndCeilingData1.a * 255.;
+          float floorOffset = floorAndCeilingData2.r * 255.;
+          float ceilingHeight = floorAndCeilingData2.g * 255.;
+          float rayAngle = floorAndCeilingData2.b;
+          //float distanceToProjectionPlane = floorAndCeilingData2.a * 255.; //! deprecated
+          float finalAngle = floorAndCeilingData3.r;
+          float offsetHeight = floorAndCeilingData3.g * 255.;
 
-          //data4.r = 1;
-          //data4.g = lastBottomOfWall;
-          //data4.b = lastTopOfWall;
-          //data4.a = this.projectionPlaneCenter; //! deprecated
-          //data5.r = floorOffset;
-          //data5.g = ceilingHeight;
-          //data5.b = ray.angle;
-          //data5.a = distanceToProjectionPlane;
-          //data6.r = radians(finalAngle);
-
-          float lastBottomOfWall = data4.g * 255.;
-          float lastTopOfWall = data4.b * 255.;
-          //float projectionPlaneCenter = data4.a * 255.;
-          float floorOffset = data5.r * 255.;
-          float ceilingHeight = data5.g * 255.;
-          float rayAngle = data5.b;
-          //float distanceToProjectionPlane = data5.a * 255.; //! deprecated
-          float finalAngle = data6.r;
-          float offsetHeight = data6.g * 255.;
-
-          //! this is an absolutely disgusting solution
-          //! that might not even work. But oh well.
-
-          // if(gl_FragCoord.y > y + height) {
-          //   return;
-          // }
-          float row = lastBottomOfWall + ((y + height) - gl_FragCoord.y);
+          float row = lastBottomOfWall + ((firstY + firstHeight) - gl_FragCoord.y);
 
           //?row = gl_FragCoord.y - ( (resolution.y - y) - height);
 
@@ -281,7 +242,7 @@ class WebglRenderer {
             return;
           }
 
-          if(ceilingTextureLoaded != 1) {
+          if(ceilingTextureLoaded != 1 || isFloor) {
             fragColor = vec4(0., 0., 0., 1.);
             return;
           }
@@ -313,7 +274,24 @@ class WebglRenderer {
           return;
         }
 
-        if(data3.r == 1.) {
+        //? if(gl_FragCoord.y >= firstY) {
+        //?   fragColor = vec4(0., 0., 0., 1.);
+        //?   return;
+        //? }
+
+        for(int i = 0; i < wallCount; i++) {
+          vec4 data1 = texelFetch(data, ivec2(gl_FragCoord.x, 1 + 3 * i ), 0);
+          vec4 data2 = texelFetch(data, ivec2(gl_FragCoord.x, 2 + 3 * i ), 0);
+          vec4 data3 = texelFetch(data, ivec2(gl_FragCoord.x, 3 + 3 * i ), 0);
+        
+          float y = resolution.y - data1.r * 255.;
+          float height = -(data1.g * 255.);
+
+          if(gl_FragCoord.y >= y || gl_FragCoord.y <= y + height - 1.) {
+            continue;
+          }
+
+          if(data3.r == 1.) {
             float textureHeight = data3.b;
 
             int closestYCoord = int(round( ((textureHeight) / (-height+2.)) * (gl_FragCoord.y-(y + height)+1.) ));
@@ -327,6 +305,7 @@ class WebglRenderer {
                 .map(
                   (_, i) => `case ${i}:
                 fragColor = data2.b * vec4(data1.b, data2.r, data2.g, 1.) + texelFetch(polygonTextures[${i}], ivec2(data3.g, closestYCoord), 0);          
+                
                 return;
           
                 break;
@@ -335,12 +314,14 @@ class WebglRenderer {
                 .join("")}
               default: break;
             }
+          }
+
+          vec4 color = vec4(data1.b, data2.r, data2.g, data2.b);
+
+          fragColor = color.rgba;
+          return;
         }
-
-        vec4 color = vec4(data1.b, data2.r, data2.g, data2.b);
-
-        fragColor = color.rgba;
-        return;
+        
       }
     `;
     //TODO: replace polygonTextures with separate variables for infinite  texture limit.
@@ -364,6 +345,16 @@ class WebglRenderer {
     this.program = createProgramFromSources(this.gl, [vs, fs2]);
 
     this.dataLocation = this.gl.getUniformLocation(this.program, "data");
+    this.spriteDataLocation = this.gl.getUniformLocation(
+      this.program,
+      "spriteData"
+    );
+
+    this.floorAndCeilingDataLocation = this.gl.getUniformLocation(
+      this.program,
+      "floorAndCeilingData"
+    );
+
     this.loadedTextureLocation = this.gl.getUniformLocation(
       this.program,
       "polygonTextures"
@@ -551,34 +542,38 @@ class WebglRenderer {
       imageToTexture(
         this.gl,
         textureLoader.textureImage,
-        this.gl.TEXTURE0 + this.loadedTextureCount.length + 3
+        this.gl.TEXTURE0 + this.loadedTextureCount.length + 5
       );
 
       textureLoader.textureIndex = this.loadedTextureCount.length;
-      this.loadedTextureCount.push(this.loadedTextureCount.length + 3);
+      this.loadedTextureCount.push(this.loadedTextureCount.length + 5);
     }
   }
 
-  #render(level, ray) {
-    if (!ray.intersects) return; //contingency
-
+  #addRayWallToWebgl(level, ray, offsetIndex) {
     const polygon = ray.polygon;
-    const sprites = ray.spriteInfo;
-
     const x = ray.x;
-
-    const distance = ray.distance; //  * degrees_to_radians(BETA); //ray.distance;
-
-    //const fake = 600 / 2 / Math.tan(degrees_to_radians(this.camera.fov / 2));
+    const distance = ray.distance;
+    const angle = ray.angle;
 
     const wallHeight =
-      (polygon.height / distance / Math.cos(ray.angle)) *
+      (polygon.height / distance / Math.cos(angle)) *
       this.distanceToProjectionPlane;
 
     const offsetHeight =
-      (this.floorOffset / distance / Math.cos(ray.angle)) *
+      (this.floorOffset / distance / Math.cos(angle)) *
       this.distanceToProjectionPlane;
 
+    const webglIndex = x * 4;
+
+    const testModifier = 12 * offsetIndex;
+
+    this.webglData[this.resolution * (4 + testModifier) + webglIndex] =
+      (this.projectionPlaneCenter + offsetHeight / 2 - wallHeight) / 255;
+    this.webglData[this.resolution * (4 + testModifier) + webglIndex + 1] =
+      wallHeight / 255;
+
+    //! lights
     var intensity = undefined;
     var lightColor = undefined;
 
@@ -598,174 +593,7 @@ class WebglRenderer {
         (polygon.color.b + lightColor.b * intensity) / 2
       );
     }
-
-    const webglIndex = x * 4;
-
-    if (
-      (level.floorTexture.loaded || level.ceilingTexture.loaded) &&
-      ray.closest
-    ) {
-      if (!this.floorTextureLoaded && level.floorTexture.loaded) {
-        //console.log(this.floorTexture);
-        imageToTexture(
-          this.gl,
-          level.floorTexture.texture.image,
-          this.gl.TEXTURE1
-        );
-        this.floorTextureLoaded = true;
-      }
-
-      if (!this.ceilingTextureLoaded && level.ceilingTexture.loaded) {
-        imageToTexture(
-          this.gl,
-          level.ceilingTexture.texture.image,
-          this.gl.TEXTURE2
-        );
-        if (!this.ceilingTextureLoaded) {
-          imageToTexture(
-            this.gl,
-            level.ceilingTexture.texture.image,
-            this.gl.TEXTURE2
-          );
-          this.ceilingTextureLoaded = true;
-        }
-      }
-
-      //!!!!
-
-      var lastBottomOfWall = Math.floor(
-        this.projectionPlaneCenter + offsetHeight / 2
-      );
-
-      var floorIterations = this.canvas.height - lastBottomOfWall;
-
-      var lastTopOfWall = Math.floor(
-        this.projectionPlaneCenter + offsetHeight / 2 - wallHeight //this.projectionPlaneCenter - offsetHeight / 2
-      );
-
-      //data4.r = 1;
-      //data4.g = lastBottomOfWall;
-      //data4.b = lastTopOfWall;
-      //data4.a = this.projectionPlaneCenter;
-
-      //data5.r = floorOffset;
-      //data5.g = ceilingHeight;
-      //data5.b = ray.angle;
-      //data5.a = distanceToProjectionPlane;
-
-      //data6.r = finalAngle;
-
-      const fake = 600 / 2 / Math.tan(degrees_to_radians(this.camera.fov / 2));
-
-      const fakeOffsetHeight =
-        (this.floorOffset / distance / Math.cos(ray.angle)) * fake;
-
-      //! CHANGED
-      var lastBottomOfWallChanged = Math.floor(
-        this.projectionPlaneCenter + fakeOffsetHeight / 2
-      );
-
-      this.webglData[this.resolution * 12 + webglIndex] = 1;
-      this.webglData[this.resolution * 12 + webglIndex + 1] =
-        lastBottomOfWall / 255;
-      this.webglData[this.resolution * 12 + webglIndex + 2] =
-        lastTopOfWall / 255;
-      this.webglData[this.resolution * 12 + webglIndex + 3] =
-        this.projectionPlaneCenter / 255;
-
-      //! projectionPlaneCenter doesn't make any difference even if it's 1.
-
-      this.webglData[this.resolution * 16 + webglIndex] =
-        this.floorOffset / 255;
-      this.webglData[this.resolution * 16 + webglIndex + 1] =
-        level.ceilingHeight / 255;
-      this.webglData[this.resolution * 16 + webglIndex + 2] = Math.cos(
-        ray.angle
-      );
-      this.webglData[this.resolution * 16 + webglIndex + 3] =
-        this.distanceToProjectionPlane / 255;
-
-      //console.log(degrees_to_radians(ray.finalangle), ray.finalangle);
-      //debugger;
-
-      this.webglData[this.resolution * 20 + webglIndex] = degrees_to_radians(
-        ray.finalangle
-      );
-      this.webglData[this.resolution * 20 + webglIndex + 1] =
-        offsetHeight / 255;
-    }
-
-    this.webglData[webglIndex] =
-      (this.projectionPlaneCenter + offsetHeight / 2 - wallHeight) / 255;
-    this.webglData[webglIndex + 1] = wallHeight / 255;
-
-    if (sprites.length > 0) {
-      for (let j = 0; j < sprites.length; j++) {
-        const sprite = sprites[j].sprite;
-        const spriteInfo = ray.spriteInfo[j];
-
-        if (!sprite.texture.loaded) continue;
-
-        var point = Math.floor(
-          Vector2.distance(spriteInfo.lineSegment.start, spriteInfo.hit)
-        );
-
-        const texture = sprite.texture.textureImage;
-
-        this.#loadTexture(sprite.texture);
-        // if (sprite.texture.textureIndex === undefined) {
-        //   //console.log("No bitches?", texture);
-        //   imageToTexture(
-        //     this.gl,
-        //     texture,
-        //     this.gl.TEXTURE0 + this.loadedTextureCount.length + 3
-        //   );
-
-        //   sprite.texture.textureIndex = this.loadedTextureCount.length;
-        //   this.loadedTextureCount.push(this.loadedTextureCount.length + 3);
-        // }
-
-        //! should be scaled to fit.
-
-        const length = spriteInfo.lineSegment.length;
-
-        textureX = (texture.width / length) * point;
-        textureHeight = texture.height;
-
-        const spriteHeight =
-          (sprite.height / spriteInfo.distance / Math.cos(ray.angle)) *
-          this.distanceToProjectionPlane;
-
-        const spriteOffsetHeight =
-          ((this.floorOffset - sprite.y) /
-            spriteInfo.distance /
-            Math.cos(ray.angle)) *
-          this.distanceToProjectionPlane;
-
-        //? sprite information
-        this.webglData[this.resolution * (24 + 8 * j) + webglIndex] = 1;
-        this.webglData[this.resolution * (24 + 8 * j) + webglIndex + 1] =
-          textureX;
-        this.webglData[this.resolution * (24 + 8 * j) + webglIndex + 2] =
-          textureHeight;
-        this.webglData[this.resolution * (24 + 8 * j) + webglIndex + 3] =
-          spriteHeight / 255;
-
-        //TODO: maybe rethink this idk.
-
-        this.webglData[this.resolution * (28 + 8 * j) + webglIndex] =
-          sprite.texture.textureIndex;
-        this.webglData[this.resolution * (28 + 8 * j) + webglIndex + 1] =
-          (this.projectionPlaneCenter + spriteOffsetHeight / 2 - spriteHeight) /
-          255;
-        this.webglData[this.resolution * (28 + 8 * j) + webglIndex + 2] =
-          sprite.transparent ? 1 : 0;
-
-        //console.log(j);
-
-        //! //TODO: also needs the sprite.y
-      }
-    }
+    //! lights
 
     if (polygon.texture && polygon.texture.loaded) {
       var point = Math.floor(Vector2.distance(ray.lineSegment.start, ray.hit));
@@ -773,17 +601,7 @@ class WebglRenderer {
       const texture = polygon.texture.textureImage;
 
       this.#loadTexture(polygon.texture);
-      // if (polygon.texture.textureIndex === undefined) {
-      //   //console.log("No bitches?", texture);
-      //   imageToTexture(
-      //     this.gl,
-      //     texture,
-      //     this.gl.TEXTURE0 + this.loadedTextureCount.length + 3
-      //   );
 
-      //   polygon.texture.textureIndex = this.loadedTextureCount.length;
-      //   this.loadedTextureCount.push(this.loadedTextureCount.length + 3);
-      // }
       if (polygon.texture.wrap) {
         const offset =
           ray.lineSegment.index > 0
@@ -806,60 +624,223 @@ class WebglRenderer {
         textureHeight = texture.height;
       }
 
-      // this.ctx.drawImage(
-      //   texture,
-      //   textureX,
-      //   0,
-      //   1,
-      //   textureHeight,
-      //   x,
-      //   this.projectionPlaneCenter + offsetHeight / 2 - wallHeight,
-      //   1,
-      //   wallHeight
-      // );
-
-      // if (level.lights.length > 0) {
-      //   this.ctx.fillStyle = `rgba(${lightColor.r}, ${lightColor.g}, ${lightColor.b}, ${intensity})`;
-
-      //   this.ctx.fillRect(
-      //     x,
-      //     this.projectionPlaneCenter + offsetHeight / 2 - wallHeight,
-      //     1,
-      //     wallHeight
-      //   );
-      // }
-
-      this.webglData[this.resolution * 8 + webglIndex] = 1;
-      this.webglData[this.resolution * 8 + webglIndex + 1] = textureX;
-      this.webglData[this.resolution * 8 + webglIndex + 2] = textureHeight;
-      this.webglData[this.resolution * 8 + webglIndex + 3] =
+      this.webglData[this.resolution * (12 + testModifier) + webglIndex] = 1;
+      this.webglData[this.resolution * (12 + testModifier) + webglIndex + 1] =
+        textureX;
+      this.webglData[this.resolution * (12 + testModifier) + webglIndex + 2] =
+        textureHeight;
+      this.webglData[this.resolution * (12 + testModifier) + webglIndex + 3] =
         polygon.texture.textureIndex; //! texture index.
 
-      this.webglData[webglIndex + 2] = lightColor.r / 255;
-      this.webglData[this.resolution * 4 + webglIndex] = lightColor.g / 255;
-      this.webglData[this.resolution * 4 + webglIndex + 1] = lightColor.b / 255;
-      this.webglData[this.resolution * 4 + webglIndex + 2] = intensity;
-
-      //! needs lightColor.rgba to color the walls correctly.
-
-      return; //! should be there normally
+      this.webglData[this.resolution * (4 + testModifier) + webglIndex + 2] =
+        lightColor.r / 255;
+      this.webglData[this.resolution * (8 + testModifier) + webglIndex] =
+        lightColor.g / 255;
+      this.webglData[this.resolution * (8 + testModifier) + webglIndex + 1] =
+        lightColor.b / 255;
+      this.webglData[this.resolution * (8 + testModifier) + webglIndex + 2] =
+        intensity;
+      return;
     }
 
-    // this.webglData[webglIndex] =
-    //   (this.projectionPlaneCenter + offsetHeight / 2 - wallHeight) / 255;
-    // this.webglData[webglIndex + 1] = wallHeight / 255;
+    this.webglData[this.resolution * (4 + testModifier) + webglIndex + 2] =
+      color.r / 255;
+    this.webglData[this.resolution * (8 + testModifier) + webglIndex] =
+      color.g / 255;
+    this.webglData[this.resolution * (8 + testModifier) + webglIndex + 1] =
+      color.b / 255;
+    this.webglData[this.resolution * (8 + testModifier) + webglIndex + 2] =
+      color.a / 255;
+  }
 
-    this.webglData[webglIndex + 2] = color.r / 255;
-    this.webglData[this.resolution * 4 + webglIndex] = color.g / 255;
-    this.webglData[this.resolution * 4 + webglIndex + 1] = color.b / 255;
-    this.webglData[this.resolution * 4 + webglIndex + 2] = color.a / 255;
+  #addRayFloorAndCeilingToWebgl(level, ray) {
+    const x = ray.x;
+    const webglIndex = x * 4;
 
-    // this.ctx.fillRect(
-    //   x,
-    //   this.projectionPlaneCenter + offsetHeight / 2 - wallHeight,
-    //   1,
-    //   wallHeight //this.canvas.height - this.canvas.height * distanceFactor * 2
-    // );
+    const polygon = ray.polygon;
+
+    const distance = ray.distance;
+
+    const wallHeight =
+      (polygon.height / distance / Math.cos(ray.angle)) *
+      this.distanceToProjectionPlane;
+
+    const offsetHeight =
+      (this.floorOffset / distance / Math.cos(ray.angle)) *
+      this.distanceToProjectionPlane;
+
+    if (!this.floorTextureLoaded && level.floorTexture.loaded) {
+      //console.log(this.floorTexture);
+      imageToTexture(
+        this.gl,
+        level.floorTexture.texture.image,
+        this.gl.TEXTURE1
+      );
+      this.floorTextureLoaded = true;
+    }
+
+    if (!this.ceilingTextureLoaded && level.ceilingTexture.loaded) {
+      imageToTexture(
+        this.gl,
+        level.ceilingTexture.texture.image,
+        this.gl.TEXTURE2
+      );
+      if (!this.ceilingTextureLoaded) {
+        imageToTexture(
+          this.gl,
+          level.ceilingTexture.texture.image,
+          this.gl.TEXTURE2
+        );
+        this.ceilingTextureLoaded = true;
+      }
+    }
+
+    var lastBottomOfWall = Math.floor(
+      this.projectionPlaneCenter + offsetHeight / 2
+    );
+
+    var lastTopOfWall = Math.floor(
+      this.projectionPlaneCenter + offsetHeight / 2 - wallHeight //this.projectionPlaneCenter - offsetHeight / 2
+    );
+
+    this.webglFloorAndCeilingData[webglIndex] = 1;
+    this.webglFloorAndCeilingData[webglIndex + 1] = lastBottomOfWall / 255;
+    this.webglFloorAndCeilingData[webglIndex + 2] = lastTopOfWall / 255;
+    this.webglFloorAndCeilingData[webglIndex + 3] =
+      this.projectionPlaneCenter / 255;
+
+    this.webglFloorAndCeilingData[this.resolution * 4 + webglIndex] =
+      this.floorOffset / 255;
+    this.webglFloorAndCeilingData[this.resolution * 4 + webglIndex + 1] =
+      level.ceilingHeight / 255;
+    this.webglFloorAndCeilingData[this.resolution * 4 + webglIndex + 2] =
+      Math.cos(ray.angle);
+    this.webglFloorAndCeilingData[this.resolution * 4 + webglIndex + 3] =
+      this.distanceToProjectionPlane / 255;
+
+    this.webglFloorAndCeilingData[this.resolution * 8 + webglIndex] =
+      degrees_to_radians(ray.finalangle);
+    this.webglFloorAndCeilingData[this.resolution * 8 + webglIndex + 1] =
+      offsetHeight / 255;
+  }
+
+  #addRaySpriteToWebgl(ray, spriteIndex) {
+    const sprites = ray.spriteInfo;
+
+    const x = ray.x;
+    const webglIndex = x * 4;
+
+    const sprite = sprites[spriteIndex].sprite;
+    const spriteInfo = ray.spriteInfo[spriteIndex];
+
+    if (!sprite.texture.loaded) return;
+
+    var point = Math.floor(
+      Vector2.distance(spriteInfo.lineSegment.start, spriteInfo.hit)
+    );
+
+    const texture = sprite.texture.textureImage;
+
+    this.#loadTexture(sprite.texture);
+
+    const length = spriteInfo.lineSegment.length;
+
+    var textureX = (texture.width / length) * point;
+    var textureHeight = texture.height;
+
+    const spriteHeight =
+      (sprite.height / spriteInfo.distance / Math.cos(ray.angle)) *
+      this.distanceToProjectionPlane;
+
+    const spriteOffsetHeight =
+      ((this.floorOffset - sprite.y) /
+        spriteInfo.distance /
+        Math.cos(ray.angle)) *
+      this.distanceToProjectionPlane;
+
+    //? sprite information
+    this.webglSpriteData[this.resolution * (8 * spriteIndex) + webglIndex] = 1;
+    this.webglSpriteData[this.resolution * (8 * spriteIndex) + webglIndex + 1] =
+      textureX;
+    this.webglSpriteData[this.resolution * (8 * spriteIndex) + webglIndex + 2] =
+      textureHeight;
+    this.webglSpriteData[this.resolution * (8 * spriteIndex) + webglIndex + 3] =
+      spriteHeight / 255;
+
+    this.webglSpriteData[this.resolution * (4 + 8 * spriteIndex) + webglIndex] =
+      sprite.texture.textureIndex;
+    this.webglSpriteData[
+      this.resolution * (4 + 8 * spriteIndex) + webglIndex + 1
+    ] =
+      (this.projectionPlaneCenter + spriteOffsetHeight / 2 - spriteHeight) /
+      255;
+    this.webglSpriteData[
+      this.resolution * (4 + 8 * spriteIndex) + webglIndex + 2
+    ] = sprite.transparent ? 1 : 0;
+  }
+
+  #render(level, ray) {
+    if (!ray.intersects) return; //contingency
+
+    const sprites = ray.spriteInfo;
+
+    if (sprites.length > 0) {
+      for (let i = 0; i < sprites.length; i++) {
+        this.#addRaySpriteToWebgl(ray, i);
+      }
+    }
+
+    if (
+      (level.floorTexture.loaded || level.ceilingTexture.loaded) &&
+      ray.closest
+    ) {
+      this.#addRayFloorAndCeilingToWebgl(level, ray);
+    }
+
+    const x = ray.x;
+    const webglIndex = x * 4;
+
+    this.webglData[webglIndex] = 1; //? the amount of walls
+    //?this.webglData[webglIndex + 1] = 0;
+
+    const heightPasses = ray.heightPass;
+
+    if (heightPasses.length > 0) {
+      // const heightInfo = new Array(heightPasses.length).fill(0);
+
+      // for (let i = 0; i < heightPasses.length; i++) {
+      //   const wallHeight =
+      //     (heightPasses[i].polygon.height /
+      //       heightPasses[i].distance /
+      //       Math.cos(ray.angle)) *
+      //     this.distanceToProjectionPlane;
+
+      //   const offsetHeight =
+      //     (this.floorOffset / heightPasses[i].distance / Math.cos(ray.angle)) *
+      //     this.distanceToProjectionPlane;
+
+      //   const y =
+      //     (this.projectionPlaneCenter + offsetHeight / 2 - wallHeight) / 255;
+
+      //   if (i > 0 && heightInfo[i - 1] < y) {
+      //     heightInfo[i] = undefined;
+      //     continue;
+      //   }
+
+      //   heightInfo[i] = y;
+      // }
+
+      this.webglData[webglIndex] = heightPasses.length;
+      for (let i = 0; i < heightPasses.length; i++) {
+        // if (heightInfo[i] === undefined) continue;
+
+        const heightPass = heightPasses[i];
+        this.#addRayWallToWebgl(level, heightPass, i);
+      }
+      return;
+    }
+
+    this.#addRayWallToWebgl(level, ray, 0);
   }
 
   render(level) {
@@ -877,8 +858,14 @@ class WebglRenderer {
     this.textureWraps = {};
 
     this.webglData = new Float32Array(
-      this.resolution * (24 + level.sprites.length * 4 * 2)
-    ); //?18);
+      this.resolution * 16 * level.polygons.length
+    );
+
+    this.webglSpriteData = new Float32Array(
+      this.resolution * level.sprites.length * 4 * 2
+    );
+
+    this.webglFloorAndCeilingData = new Float32Array(this.resolution * 3 * 4);
 
     const rays = this.camera.castRays(
       level,
@@ -890,8 +877,28 @@ class WebglRenderer {
       this.gl,
       this.webglData,
       this.resolution,
-      6 + level.sprites.length * 2,
+      3 * level.polygons.length + 1,
       this.gl.TEXTURE0,
+      this.gl.RGBA32F,
+      this.gl.RGBA
+    );
+
+    storeDataInTexture(
+      this.gl,
+      this.webglSpriteData,
+      this.resolution,
+      level.sprites.length * 2,
+      this.gl.TEXTURE3,
+      this.gl.RGBA32F,
+      this.gl.RGBA
+    );
+
+    storeDataInTexture(
+      this.gl,
+      this.webglFloorAndCeilingData,
+      this.resolution,
+      3,
+      this.gl.TEXTURE4,
       this.gl.RGBA32F,
       this.gl.RGBA
     );
@@ -924,6 +931,8 @@ class WebglRenderer {
     // }
 
     this.gl.uniform1i(this.dataLocation, 0);
+    this.gl.uniform1i(this.spriteDataLocation, 3);
+    this.gl.uniform1i(this.floorAndCeilingDataLocation, 4);
 
     this.gl.uniform1i(this.floorTextureLocation, 1);
     this.gl.uniform1i(this.ceilingTextureLocation, 2);
