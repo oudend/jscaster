@@ -36,7 +36,14 @@ renderer.canvas.style.height = `${window.innerHeight}px`;
 
 gunShootImage.style.visibility = "hidden";
 
-var gunLeft = window.innerWidth / 2 - 200;
+var gunSize = Math.min(window.innerHeight / 2, window.innerWidth / 2);
+
+gunIdleImage.style.width = `${gunSize}px`;
+gunIdleImage.style.height = `${gunSize}px`;
+gunShootImage.style.width = `${gunSize}px`;
+gunShootImage.style.height = `${gunSize}px`;
+
+var gunLeft = window.innerWidth / 2 - gunSize / 2;
 
 gunIdleImage.style.left = `${gunLeft}px`;
 gunShootImage.style.left = `${gunLeft}px`;
@@ -285,8 +292,8 @@ function moveCamera() {
     let headBobCos =
       headBobMultiplier / 2 - Math.cos(headBobValue) * headBobMultiplier;
 
-    gunIdleImage.style.bottom = `${headBobSin - 4}px`;
-    gunShootImage.style.bottom = `${headBobSin - 4}px`;
+    gunIdleImage.style.bottom = `${headBobSin - 20}px`;
+    gunShootImage.style.bottom = `${headBobSin - 20}px`;
 
     gunIdleImage.style.left = `${gunLeft + headBobCos}px`;
     gunShootImage.style.left = `${gunLeft + headBobCos}px`;
