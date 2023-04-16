@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Jscaster - Simple Shooter</title>
+    <meta name="description" content="Jscaster" />
+    <meta name="keywords" content="javascript raycasting engine example" />
+    <script type="module" src="index.js" defer="true"></script>
+
+    <div class="gun"></div>
+
+    <img
+      src="../../assets/gun_idle (1).png"
+      id="gun_idle"
+      alt="Gun"
+      class="gun"
+    />
+    <img
+      src="../../assets/gun_shoot.png"
+      id="gun_shoot"
+      alt="Gun"
+      class="gun"
+    />
+
+    <style>
+      .gun {
+        display: block;
+
+        object-fit: fill;
+        position: fixed;
+        bottom: 0px;
+        width: 400px;
+        height: 400px;
+
+        /*image-rendering: pixelated;*/
+
+        z-index: 100;
+      }
+
+      .gun-hidden {
+        visibility: hidden;
+      }
+
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+
+      canvas {
+        image-rendering: crisp-edges;
+        /* image-rendering: pixelated; */
+      }
+
+      .minimap {
+        border-radius: 10%;
+        position: absolute;
+
+        outline: white outset 3px;
+
+        width: 100px;
+        height: 100px;
+
+        left: 3px;
+        top: 50px;
+
+        opacity: 75%;
+      }
+    </style>
+  </head>
+  <body></body>
+</html>
