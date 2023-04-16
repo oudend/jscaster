@@ -86,30 +86,54 @@ class Polygon {
       return segments;
     }
   }
-}
 
-Polygon.circle = function (center, radius = 60, edges = 5) {
-  var points = [];
+  static circle(center, radius = 60, edges = 5, height = undefined) {
+    var points = [];
 
-  var n_angles = (2 * Math.PI) / edges;
-  for (let i = 0; i < edges; i++) {
-    let x = center.x + radius * Math.cos(i * n_angles);
-    let y = center.y + radius * Math.sin(i * n_angles);
-    points.push(new Vector2(x, y));
+    var n_angles = (2 * Math.PI) / edges;
+    for (let i = 0; i < edges; i++) {
+      let x = center.x + radius * Math.cos(i * n_angles);
+      let y = center.y + radius * Math.sin(i * n_angles);
+      points.push(new Vector2(x, y));
+    }
+
+    return new Polygon(points, height);
   }
 
-  return new Polygon(points);
-};
+  static square(center, radius, height = undefined) {
+    var points = [];
 
-Polygon.square = function (center, radius) {
-  var points = [];
+    points.push(new Vector2(center.x - radius, center.y + radius));
+    points.push(new Vector2(center.x - radius, center.y - radius));
+    points.push(new Vector2(center.x + radius, center.y - radius));
+    points.push(new Vector2(center.x + radius, center.y + radius));
 
-  points.push(new Vector2(center.x - radius, center.y + radius));
-  points.push(new Vector2(center.x - radius, center.y - radius));
-  points.push(new Vector2(center.x + radius, center.y - radius));
-  points.push(new Vector2(center.x + radius, center.y + radius));
+    return new Polygon(points, height);
+  }
+}
 
-  return new Polygon(points);
-};
+// Polygon.circle = function (center, radius = 60, edges = 5) {
+//   var points = [];
+
+//   var n_angles = (2 * Math.PI) / edges;
+//   for (let i = 0; i < edges; i++) {
+//     let x = center.x + radius * Math.cos(i * n_angles);
+//     let y = center.y + radius * Math.sin(i * n_angles);
+//     points.push(new Vector2(x, y));
+//   }
+
+//   return new Polygon(points);
+// };
+
+// Polygon.square = function (center, radius) {
+//   var points = [];
+
+//   points.push(new Vector2(center.x - radius, center.y + radius));
+//   points.push(new Vector2(center.x - radius, center.y - radius));
+//   points.push(new Vector2(center.x + radius, center.y - radius));
+//   points.push(new Vector2(center.x + radius, center.y + radius));
+
+//   return new Polygon(points);
+// };
 
 export { Polygon };

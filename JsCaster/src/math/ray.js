@@ -20,6 +20,7 @@ class Ray {
   constructor(origin = new Vector2(), angle = 0, length = 100) {
     //produce a line segment
 
+    this.origin = origin;
     this.angle = angle;
     this.length = length;
 
@@ -105,6 +106,65 @@ class Ray {
     // throw new Error("herror");
 
     return intersectionInformation;
+  }
+
+  //TODO: eventually make the camera use this.
+  //! This is pretty horribly unoptimized but after the
+  //! grid implementation it will be fine(r).
+  static castRay(level, ray, cameraAngle) {
+    // const polygonsHit = [];
+    // const spritesHit = [];
+
+    var closestObject = undefined;
+    var closestHitDistance = Infinity;
+
+    for (var i = 0; i < level.polygons.length; i++) {
+      const polygon = level.polygons[i];
+      const lineSegments = polygon.segments;
+
+      for (var j = 0; j < lineSegments.length; j++) {
+        const lineSegment = lineSegments[j];
+
+        const intersection = ray.intersects(lineSegment);
+
+        if (!intersection.intersects) continue;
+
+        //console.log(ray);
+
+        const distance = Vector2.distance(intersection.point, ray.origin);
+
+        //! might be important
+        // if (distance > rayInformation.distance && rayInformation.intersects)
+        //   continue;
+        //! might be important
+
+        if (distance > closestHitDistance) continue;
+
+        closestObject = polygon;
+
+        closestHitDistance = distance;
+      }
+    }
+
+    for (var j = 0; j < level.sprites.length; j++) {
+      const sprite = level.sprites[j];
+
+      const lineSegment = sprite.getLineSegment(cameraAngle);
+
+      const intersection = ray.intersects(lineSegment);
+
+      if (!intersection.intersects) continue;
+
+      const distance = Vector2.distance(intersection.point, ray.origin);
+
+      if (distance > closestHitDistance) continue;
+
+      closestObject = sprite;
+
+      closestHitDistance = distance;
+    }
+
+    return closestObject;
   }
 }
 

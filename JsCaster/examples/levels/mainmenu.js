@@ -44,7 +44,7 @@ console.log(mainmenuLevel.sprites);
 mainmenuLevel.addPolygon(
   new Polygon(
     [new Vector2(100, 500), new Vector2(10, 800), new Vector2(400, 600)],
-    200
+    400
   ).setTextureLoader(secondaryTextureLoader)
 );
 
@@ -56,19 +56,19 @@ mainmenuLevel.addPolygon(
 );
 
 mainmenuLevel.addPolygon(
-  new Polygon.circle(new Vector2(100, 200), 50, 15).setTextureLoader(
+  Polygon.circle(new Vector2(100, 200), 50, 15, 400).setTextureLoader(
     defaultTextureLoader
   )
 );
 
 mainmenuLevel.addPolygon(
-  new Polygon.circle(new Vector2(600, 200), 50, 15).setTextureLoader(
+  Polygon.circle(new Vector2(600, 200), 50, 15, 400).setTextureLoader(
     defaultTextureLoader
   )
 );
 
 mainmenuLevel.addPolygon(
-  new Polygon.circle(new Vector2(400, 500), 60, 15).setTextureLoader(
+  Polygon.circle(new Vector2(400, 500), 60, 15, 400).setTextureLoader(
     defaultTextureLoader
   )
 );
@@ -83,8 +83,6 @@ mainmenuLevel.addPolygon(
 // );
 
 // mainmenuLevel.addLight(new DirectionalLight(new Color(255, 0, 255), -90, 1));
-mainmenuLevel.addLight(new DirectionalLight(new Color(1, 255, 255), 90, 3));
-mainmenuLevel.addLight(new DirectionalLight(new Color(255, 19, 255), 10, 5));
-mainmenuLevel.addLight(new DirectionalLight(new Color(255, 255, 25), 50, 1));
+mainmenuLevel.addLight(new DirectionalLight(new Color(1, 255, 255), 90, 1));
 
 export { mainmenuLevel };

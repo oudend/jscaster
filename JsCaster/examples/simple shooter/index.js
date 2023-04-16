@@ -20,7 +20,7 @@ import Stats from "../../lib/stats.module.js";
 
 const camera = new Camera(new Vector2(1, 1), 40, 70, 1000);
 
-const renderer = new WebglRenderer(300, 600, camera, document.body);
+const renderer = new WebglRenderer(450, 450, camera, document.body);
 
 const gunIdleImage = document.getElementById("gun_idle");
 const gunShootImage = document.getElementById("gun_shoot");
@@ -36,8 +36,10 @@ renderer.canvas.style.height = `${window.innerHeight}px`;
 
 gunShootImage.style.visibility = "hidden";
 
-gunIdleImage.style.left = `${window.innerWidth / 2 - 200}px`;
-gunShootImage.style.left = `${window.innerWidth / 2 - 200}px`;
+var gunLeft = window.innerWidth / 2 - 200;
+
+gunIdleImage.style.left = `${gunLeft}px`;
+gunShootImage.style.left = `${gunLeft}px`;
 
 const levelHelper = new LevelHelper(mainmenuLevel, true);
 const rendererHelper = new RendererHelper(renderer, mainmenuLevel, true);
@@ -96,7 +98,10 @@ var gunShootAnimationDuration = 100; //1000 ms
 var gunShootAnimation = false;
 var gunShootAnimationStart = 0;
 
-var gunShootCooldownDuration = 1000; //1000 ms
+var gunShootCooldownDurationMinimum = 700; //1000 ms
+var gunShootCooldownDurationMaximum = 1000;
+
+var gunShootCooldownDuration = 1000;
 var gunShootCooldown = false;
 var gunShootCooldownStart = 100; //1000 ms
 
@@ -106,7 +111,7 @@ var enemySpriteHurtAnimationStart = 100;
 
 var gunDamage = 10;
 
-var speed = 0;
+var speed = 3;
 
 var run = true;
 
@@ -133,6 +138,13 @@ function animate() {
     Date.now() - gunShootCooldownStart > gunShootCooldownDuration
   ) {
     gunShootCooldown = false;
+    gunShootCooldownDuration = Math.floor(
+      Math.random() *
+        (gunShootCooldownDurationMaximum -
+          gunShootCooldownDurationMinimum +
+          1) +
+        gunShootCooldownDurationMinimum
+    );
   }
 
   handleEnemy();
@@ -144,8 +156,12 @@ function animate() {
 
 const enemySpeed = 1;
 
+var headBobValue = 0;
+var headBobIntensity = 0.1;
+var headBobMultiplier = 2;
+
 function gameOver() {
-  run = false;
+  run = false; //? oldschool cool
 }
 
 function handleEnemy() {
@@ -186,8 +202,6 @@ function handleEnemy() {
 function moveCamera() {
   Object.entries(keys).forEach(([key, value]) => {
     if (!value) return;
-
-    speed = 2;
 
     switch (key) {
       case "w":
@@ -234,10 +248,7 @@ function moveCamera() {
 
         const ray = new Ray(camera.position, camera.angle, 1000);
 
-        if (
-          ray.intersects(enemySprite.getLineSegment(camera.angle)).intersects
-        ) {
-          //? can shoot straight through walls at the moment
+        if (Ray.castRay(mainmenuLevel, ray, camera.angle) == enemySprite) {
           console.log("hit");
           enemyTextureLoader.setTextureLoader(1);
           enemyHp -= gunDamage;
@@ -261,6 +272,28 @@ function moveCamera() {
     }
     camera.angle = camera.angle % 360;
   });
+
+  if (
+    Object.entries(keys).some(
+      ([key, value]) => ["w", "a", "s", "d"].includes(key) && value === true
+    )
+  ) {
+    headBobValue += headBobIntensity;
+
+    let headBobSin =
+      headBobMultiplier / 2 - Math.sin(headBobValue) * headBobMultiplier;
+    let headBobCos =
+      headBobMultiplier / 2 - Math.cos(headBobValue) * headBobMultiplier;
+
+    gunIdleImage.style.bottom = `${headBobSin - 4}px`;
+    gunShootImage.style.bottom = `${headBobSin - 4}px`;
+
+    gunIdleImage.style.left = `${gunLeft + headBobCos}px`;
+    gunShootImage.style.left = `${gunLeft + headBobCos}px`;
+
+    // console.log("==!=!=!");
+    // debugger;
+  }
 }
 
 document.addEventListener("keydown", (event) => {

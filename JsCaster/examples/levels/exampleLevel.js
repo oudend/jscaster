@@ -68,13 +68,13 @@ console.log(exampleLevel.sprites);
 // );
 
 exampleLevel.addPolygon(
-  new Polygon.circle(new Vector2(100, 200), 50, 10).setTextureLoader(
+  Polygon.circle(new Vector2(100, 200), 50, 10).setTextureLoader(
     defaultTextureLoader
   )
 );
 
 exampleLevel.addPolygon(
-  new Polygon.square(new Vector2(400, 200), 100).setTextureLoader(
+  Polygon.square(new Vector2(400, 200), 100).setTextureLoader(
     temporaryTextureLoader
   )
 );
