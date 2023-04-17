@@ -44,6 +44,17 @@ class Vector2 {
     return Math.atan2(this.y, this.x);
   }
 
+  get magnitude() {
+    return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
+
+  normalize() {
+    const magnitude = this.magnitude;
+    this.x /= magnitude;
+    this.y /= magnitude;
+    return this;
+  }
+
   /**
    * Adds to another vector or adds each component by single value.
    *

@@ -8,6 +8,7 @@ import {
   MultiTextureLoader,
   TextureLoader,
   Ray,
+  LineSegment,
 } from "../../src/jscaster.js";
 
 //!documentation build --document-exported ./JsCaster/src/jscaster.js -f html -o ./JsCaster/docs
@@ -18,7 +19,7 @@ import { mainmenuLevel } from "../levels/mainmenu.js";
 
 import Stats from "../../lib/stats.module.js";
 
-const camera = new Camera(new Vector2(1, 1), 40, 70, 1000);
+const camera = new Camera(new Vector2(800, 300), 180, 70, 1000);
 
 const renderer = new WebglRenderer(450, 450, camera, document.body);
 
@@ -44,9 +45,12 @@ gunShootImage.style.width = `${gunSize}px`;
 gunShootImage.style.height = `${gunSize}px`;
 
 var gunLeft = window.innerWidth / 2 - gunSize / 2;
+var gunY = -20;
 
 gunIdleImage.style.left = `${gunLeft}px`;
 gunShootImage.style.left = `${gunLeft}px`;
+gunIdleImage.style.bottom = `${gunY}px`;
+gunShootImage.style.bottom = `${gunY}px`;
 
 const levelHelper = new LevelHelper(mainmenuLevel, true);
 const rendererHelper = new RendererHelper(renderer, mainmenuLevel, true);
@@ -105,18 +109,18 @@ var gunShootAnimationDuration = 100; //1000 ms
 var gunShootAnimation = false;
 var gunShootAnimationStart = 0;
 
-var gunShootCooldownDurationMinimum = 700; //1000 ms
-var gunShootCooldownDurationMaximum = 1000;
+var gunShootCooldownDurationMinimum = 500; //1000 ms
+var gunShootCooldownDurationMaximum = 800;
 
 var gunShootCooldownDuration = 1000;
 var gunShootCooldown = false;
 var gunShootCooldownStart = 100; //1000 ms
 
-var enemySpriteHurtAnimationDuration = 300; //1000 ms
+var enemySpriteHurtAnimationDuration = 175; //1000 ms
 var enemySpriteHurtAnimation = false;
 var enemySpriteHurtAnimationStart = 100;
 
-var gunDamage = 10;
+var gunDamage = 15;
 
 var speed = 3;
 
@@ -138,6 +142,9 @@ function animate() {
     gunShootImage.style.visibility = "hidden";
     gunShootCooldown = true;
     gunShootCooldownStart = Date.now();
+    gunY = -20;
+    gunIdleImage.style.bottom = `${gunY}px`;
+    gunShootImage.style.bottom = `${gunY}px`;
   }
 
   if (
@@ -161,7 +168,8 @@ function animate() {
   if (run) requestAnimationFrame(animate);
 }
 
-const enemySpeed = 1;
+const enemySpeed = 1.5;
+const deathDistance = 2;
 
 var headBobValue = 0;
 var headBobIntensity = 0.1;
@@ -195,7 +203,7 @@ function handleEnemy() {
 
   const distance = Vector2.distance(camera.position, enemySprite.position);
 
-  if (distance < 1.5) {
+  if (distance < deathDistance) {
     gameOver();
   }
 
@@ -206,36 +214,102 @@ function handleEnemy() {
   enemySprite.position.y += dy * enemySpeed;
 }
 
+//? left, right, up, down
+const boxSize = 10;
+
+function getCameraCollisionBox(camera) {
+  //? right, left, bottom, up
+  return [
+    new LineSegment(
+      Vector2.add(camera.position, new Vector2(boxSize / 2, boxSize / 2)),
+      Vector2.add(camera.position, new Vector2(boxSize / 2, -boxSize / 2))
+    ),
+    new LineSegment(
+      Vector2.add(camera.position, new Vector2(-boxSize / 2, boxSize / 2)),
+      Vector2.add(camera.position, new Vector2(-boxSize / 2, -boxSize / 2))
+    ),
+    new LineSegment(
+      Vector2.add(camera.position, new Vector2(boxSize / 2, boxSize / 2)),
+      Vector2.add(camera.position, new Vector2(-boxSize / 2, boxSize / 2))
+    ),
+    new LineSegment(
+      Vector2.add(camera.position, new Vector2(boxSize / 2, -boxSize / 2)),
+      Vector2.add(camera.position, new Vector2(-boxSize / 2, -boxSize / 2))
+    ),
+  ];
+}
+
+function detectCollision(level, camera) {
+  const collisionBox = getCameraCollisionBox(camera);
+
+  for (let lineSegment of collisionBox) {
+    const raycast = Ray.castRay(
+      level,
+      Ray.fromLineSegment(lineSegment),
+      camera.angle
+    );
+
+    //console.log(raycast, lineSegment);
+
+    if (raycast.object !== undefined) return true;
+  }
+
+  return false;
+}
+
 function moveCamera() {
   Object.entries(keys).forEach(([key, value]) => {
     if (!value) return;
 
+    var movementVector = new Vector2(0, 0);
+
     switch (key) {
       case "w":
-        camera.position.add(
-          Vector2.fromAngle(degrees_to_radians(camera.angle)).multiply(speed)
-        );
+        let moveForward = Vector2.fromAngle(
+          degrees_to_radians(camera.angle)
+        ).multiply(speed);
+
+        movementVector.add(moveForward);
+
+        // camera.position = futurePosition;
         break;
       case "s":
-        camera.position.add(
-          Vector2.fromAngle(degrees_to_radians(camera.angle - 180)).multiply(
-            speed
-          )
-        );
+        let moveBackward = Vector2.fromAngle(
+          degrees_to_radians(camera.angle - 180)
+        ).multiply(speed);
+
+        movementVector.add(moveBackward);
+
+        // camera.position.add(
+        //   Vector2.fromAngle(degrees_to_radians(camera.angle - 180)).multiply(
+        //     speed
+        //   )
+        // );
         break;
       case "a":
-        camera.position.add(
-          Vector2.fromAngle(degrees_to_radians(camera.angle - 90)).multiply(
-            speed
-          )
-        );
+        let moveLeft = Vector2.fromAngle(
+          degrees_to_radians(camera.angle - 90)
+        ).multiply(speed);
+
+        movementVector.add(moveLeft);
+        // camera.position.add(
+        //   Vector2.fromAngle(degrees_to_radians(camera.angle - 90)).multiply(
+        //     speed
+        //   )
+        // );
         break;
       case "d":
-        camera.position.add(
-          Vector2.fromAngle(degrees_to_radians(camera.angle + 90)).multiply(
-            speed
-          )
-        );
+        let moveRight = Vector2.fromAngle(
+          degrees_to_radians(camera.angle + 90)
+        ).multiply(speed);
+
+        movementVector.add(moveRight);
+
+        // camera.position.add(
+        //   Vector2.fromAngle(degrees_to_radians(camera.angle + 90)).multiply(
+        //     speed
+        //   )
+        // );
         break;
       case "ArrowRight":
         camera.angle += turnSpeed;
@@ -251,11 +325,18 @@ function moveCamera() {
         gunShootAnimation = true;
         gunShootAnimationStart = Date.now();
 
+        gunY = -10;
+
+        gunIdleImage.style.bottom = `${gunY}px`;
+        gunShootImage.style.bottom = `${gunY}px`;
+
         //? raycast from the camera position in the shooting direction and check if it intersects with the sprites lineSegment
 
         const ray = new Ray(camera.position, camera.angle, 1000);
 
-        if (Ray.castRay(mainmenuLevel, ray, camera.angle) == enemySprite) {
+        if (
+          Ray.castRay(mainmenuLevel, ray, camera.angle).object == enemySprite
+        ) {
           console.log("hit");
           enemyTextureLoader.setTextureLoader(1);
           enemyHp -= gunDamage;
@@ -277,7 +358,26 @@ function moveCamera() {
       //   renderer.floorOffset += 2;
       //   break;
     }
+
     camera.angle = camera.angle % 360;
+
+    if (movementVector.x == 0 && movementVector.y == 0) return;
+
+    movementVector.normalize().multiply(speed);
+
+    camera.position.add(new Vector2(movementVector.x, 0));
+    //if (detectCollision(mainmenuLevel, camera)) {
+    for (let i = 0; i < 10; i++) {
+      if (!detectCollision(mainmenuLevel, camera)) continue;
+      camera.position.subtract(new Vector2(movementVector.x / 10, 0));
+    }
+
+    camera.position.add(new Vector2(0, movementVector.y));
+    //if (detectCollision(mainmenuLevel, camera)) {
+    for (let i = 0; i < 10; i++) {
+      if (!detectCollision(mainmenuLevel, camera)) continue;
+      camera.position.subtract(new Vector2(0, movementVector.y / 10));
+    }
   });
 
   if (
@@ -292,8 +392,8 @@ function moveCamera() {
     let headBobCos =
       headBobMultiplier / 2 - Math.cos(headBobValue) * headBobMultiplier;
 
-    gunIdleImage.style.bottom = `${headBobSin - 20}px`;
-    gunShootImage.style.bottom = `${headBobSin - 20}px`;
+    gunIdleImage.style.bottom = `${headBobSin + gunY}px`;
+    gunShootImage.style.bottom = `${headBobSin + gunY}px`;
 
     gunIdleImage.style.left = `${gunLeft + headBobCos}px`;
     gunShootImage.style.left = `${gunLeft + headBobCos}px`;
@@ -314,24 +414,3 @@ document.addEventListener("keyup", (event) => {
 
   keys[key] = false;
 });
-
-//! PLAN
-
-//1. Move rayInformation from camera to ray.js if possible. ( At least make ray.js return only necessary information ).
-//2. Clean up code in general.
-//3. Darken color based on distance from camera.
-//4. Figure out normal for ray hits and include in ray.js
-//5. Darken color based on dot product between ray and its normal.
-
-//! IMPORTANT
-
-//NOW. Jsdoc for documentation
-//NOW. Sample game.
-//1. Make sure to only pass intersecting rays to the renderer so it doesn't have to sort through them all on its own.
-//2. Prebaked lighting so the normal of a surface will influence the light based on a light direction (dot product again).
-//3. Rename camera.verticalAngle as it is missleading and not really an angle
-
-//! FUTURE IDEAS
-
-//1. Possibly divide all polygons in a level to a grid or something, or put each point in a grid cell for more efficient raycasting with only necessary points.
-//2. A multiTextureLoader with some index or something that lets you switch the textures of the objects assigned to the loader in real time.

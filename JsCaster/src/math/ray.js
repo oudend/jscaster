@@ -34,6 +34,13 @@ class Ray {
     this.lineSegment = new LineSegment(origin, end);
   }
 
+  static fromLineSegment(lineSegment) {
+    const angle = Vector2.angleBetween(lineSegment.start, lineSegment.end);
+    const length = Vector2.distance(lineSegment.start, lineSegment.end);
+
+    return new Ray(lineSegment.start, angle, length);
+  }
+
   /**
    * Checks where and if the ray intersects a lineSegment object.
    *
@@ -117,6 +124,7 @@ class Ray {
 
     var closestObject = undefined;
     var closestHitDistance = Infinity;
+    var closestIntersection = undefined;
 
     for (var i = 0; i < level.polygons.length; i++) {
       const polygon = level.polygons[i];
@@ -143,6 +151,7 @@ class Ray {
         closestObject = polygon;
 
         closestHitDistance = distance;
+        closestIntersection = intersection;
       }
     }
 
@@ -161,10 +170,15 @@ class Ray {
 
       closestObject = sprite;
 
+      closestIntersection = intersection;
       closestHitDistance = distance;
     }
 
-    return closestObject;
+    return {
+      object: closestObject,
+      distance: closestHitDistance,
+      intersection: closestIntersection,
+    };
   }
 }
 

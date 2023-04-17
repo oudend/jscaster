@@ -140,6 +140,8 @@ class WebglRenderer {
         vec4 floorAndCeilingData2 = texelFetch(floorAndCeilingData, ivec2(gl_FragCoord.x, 1), 0);
         vec4 floorAndCeilingData3 = texelFetch(floorAndCeilingData, ivec2(gl_FragCoord.x, 2), 0);
 
+        vec4 opacityColor = vec4(0.);
+
         if(spriteCount > 0) {
           for(int i = 0; i < spriteCount; i++) {
             vec4 spriteData1 = texelFetch(spriteData, ivec2(gl_FragCoord.x, 0 + i * 2), 0);
@@ -174,11 +176,13 @@ class WebglRenderer {
                   (_, i) => `case ${i}:
                 spriteColor = texelFetch(polygonTextures[${i}], ivec2(textureX, closestYCoord), 0);
 
-                fragColor = vec4(spriteColor);    
+                fragColor = vec4(spriteColor) + opacityColor * opacityColor.a;    
                 
-                if(!(isTransparent && spriteColor.a == 0.))
+                if(!(isTransparent && spriteColor.a < 1.))
                   return;
           
+                opacityColor += spriteColor;
+
                 break;
             `
                 )
@@ -238,12 +242,12 @@ class WebglRenderer {
             int floorTileX = int( abs(floorXEnd * floorTextureXscale + floorTextureOffset.x) / floorTextureScale.x ) % floorTextureDimensions.x;
             int floorTileY = int( abs(floorYEnd * floorTextureYscale + floorTextureOffset.y) / floorTextureScale.y ) % floorTextureDimensions.y;
             //! / floorTextureScale.x
-            fragColor = texelFetch(floorTexture, ivec2(floorTileX, floorTileY), 0);
+            fragColor = mix( texelFetch(floorTexture, ivec2(floorTileX, floorTileY), 0), vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a);
             return;
           }
 
           if(ceilingTextureLoaded != 1 || isFloor) {
-            fragColor = vec4(0., 0., 0., 1.);
+            fragColor = mix( vec4(0., 0., 0., 1.), vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a);
             return;
           }
 
@@ -266,11 +270,11 @@ class WebglRenderer {
           int ceilingTileX = int( abs(ceilingXEnd * ceilingTextureXscale + ceilingTextureOffset.x) / ceilingTextureScale.x ) % ceilingTextureDimensions.x; //int( mod(ceilingXEnd * ceilingTextureXscale, float(ceilingTextureDimensions.x) ) ); 
           int ceilingTileY = int( abs(ceilingYEnd * ceilingTextureYscale + ceilingTextureOffset.y) / ceilingTextureScale.y ) % ceilingTextureDimensions.y; //int( mod(ceilingYEnd * ceilingTextureYscale, float(ceilingTextureDimensions.y) ) );
 
-          fragColor = texelFetch(ceilingTexture, ivec2(ceilingTileX, ceilingTileY), 0);
+          fragColor = mix( texelFetch(ceilingTexture, ivec2(ceilingTileX, ceilingTileY), 0) + opacityColor * opacityColor.a, vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a);
           return;
 
 
-          fragColor = vec4(0., 0., 0., 1.);
+          fragColor = mix( vec4(0., 0., 0., 1.), vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a);
           return;
         }
 
@@ -304,7 +308,7 @@ class WebglRenderer {
                 .fill(0)
                 .map(
                   (_, i) => `case ${i}:
-                fragColor = data2.b * vec4(data1.b, data2.r, data2.g, 1.) + texelFetch(polygonTextures[${i}], ivec2(data3.g, closestYCoord), 0);          
+                fragColor = mix(data2.b * vec4(data1.b, data2.r, data2.g, 1.) + texelFetch(polygonTextures[${i}], ivec2(data3.g, closestYCoord), 0), vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a);
                 
                 return;
           
@@ -318,7 +322,7 @@ class WebglRenderer {
 
           vec4 color = vec4(data1.b, data2.r, data2.g, data2.b);
 
-          fragColor = color.rgba;
+          fragColor = mix(color.rgba, vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a);
           return;
         }
         
