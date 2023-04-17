@@ -20,13 +20,13 @@ class Sprite {
   }
 
   getLineSegment(angle) {
-    const rightDirection = Vector2.fromAngle(
-      degrees_to_radians((angle + 90) % 360)
+    const leftDirection = Vector2.fromAngle(
+      degrees_to_radians((angle - 90) % 360)
     );
 
     return new LineSegment(
-      Vector2.multiply(rightDirection, this.width / 2).add(this.position),
-      Vector2.multiply(rightDirection, -this.width / 2).add(this.position)
+      Vector2.multiply(leftDirection, this.width / 2).add(this.position),
+      Vector2.multiply(leftDirection, -this.width / 2).add(this.position)
     );
   }
 

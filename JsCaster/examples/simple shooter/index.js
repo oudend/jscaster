@@ -57,27 +57,23 @@ const rendererHelper = new RendererHelper(renderer, mainmenuLevel, true);
 
 // document.body.appendChild(levelHelper.canvas);
 
-const enemyTextureLoaderIdle = new TextureLoader(
-  "../../assets/enemy/Idle.png",
-  false,
-  true,
-  false,
-  "repeat",
-  new Vector2(1, 1)
-);
+const enemyTextureLoaderIdle = new TextureLoader("../../assets/enemy/Idle.png");
 
-const enemyTextureLoaderHurt = new TextureLoader(
-  "../../assets/enemy/Take Hit.png",
-  false,
-  true,
-  false,
-  "repeat",
-  new Vector2(1, 1)
+const enemyTextureLoaderHurt1 = new TextureLoader(
+  "../../assets/enemy/Take Hit1.png"
+);
+const enemyTextureLoaderHurt2 = new TextureLoader(
+  "../../assets/enemy/Take Hit2.png"
+);
+const enemyTextureLoaderHurt3 = new TextureLoader(
+  "../../assets/enemy/Take Hit3.png"
 );
 
 const enemyTextureLoader = new MultiTextureLoader([
   enemyTextureLoaderIdle,
-  enemyTextureLoaderHurt,
+  enemyTextureLoaderHurt1,
+  enemyTextureLoaderHurt2,
+  enemyTextureLoaderHurt3,
 ]);
 
 const enemySprite = mainmenuLevel.addSprite(
@@ -116,13 +112,19 @@ var gunShootCooldownDuration = 1000;
 var gunShootCooldown = false;
 var gunShootCooldownStart = 100; //1000 ms
 
-var enemySpriteHurtAnimationDuration = 175; //1000 ms
+//var enemySpriteHurtAnimationDuration = 175; //1000 ms
 var enemySpriteHurtAnimation = false;
+var enemySpriteAnimationIndex = 0;
+var enemySpriteHurtAnimationTimings = [
+  { duration: 100, animationIndex: 1 },
+  { duration: 205, animationIndex: 2 },
+  { duration: 100, animationIndex: 3 },
+];
 var enemySpriteHurtAnimationStart = 100;
 
 var gunDamage = 15;
 
-var speed = 3;
+var speed = 2.15;
 
 var run = true;
 
@@ -182,13 +184,32 @@ function gameOver() {
 function handleEnemy() {
   //? enemy should constantly move towards the player.
 
+  let enemySpriteAnimationTiming =
+    enemySpriteHurtAnimationTimings[enemySpriteAnimationIndex];
+
   if (
     enemySpriteHurtAnimation &&
     Date.now() - enemySpriteHurtAnimationStart >
-      enemySpriteHurtAnimationDuration
+      enemySpriteAnimationTiming.duration
   ) {
-    enemySpriteHurtAnimation = false;
-    enemyTextureLoader.setTextureLoader(0);
+    if (
+      enemySpriteAnimationIndex + 1 >=
+      enemySpriteHurtAnimationTimings.length
+    ) {
+      enemySpriteAnimationIndex = 0;
+      enemySpriteHurtAnimation = false;
+      enemyTextureLoader.setTextureLoader(0);
+    } else {
+      let textureLoaderIndex =
+        enemySpriteHurtAnimationTimings[enemySpriteAnimationIndex + 1]
+          .animationIndex;
+
+      enemySpriteAnimationIndex++;
+
+      enemySpriteHurtAnimationStart = Date.now();
+
+      enemyTextureLoader.setTextureLoader(textureLoaderIndex);
+    }
   }
 
   if (enemyHp <= 0) {
@@ -265,9 +286,7 @@ function moveCamera() {
 
     switch (key) {
       case "w":
-        let moveForward = Vector2.fromAngle(
-          degrees_to_radians(camera.angle)
-        ).multiply(speed);
+        let moveForward = Vector2.fromAngle(degrees_to_radians(camera.angle));
 
         movementVector.add(moveForward);
 
@@ -276,7 +295,7 @@ function moveCamera() {
       case "s":
         let moveBackward = Vector2.fromAngle(
           degrees_to_radians(camera.angle - 180)
-        ).multiply(speed);
+        );
 
         movementVector.add(moveBackward);
 
@@ -287,9 +306,7 @@ function moveCamera() {
         // );
         break;
       case "a":
-        let moveLeft = Vector2.fromAngle(
-          degrees_to_radians(camera.angle - 90)
-        ).multiply(speed);
+        let moveLeft = Vector2.fromAngle(degrees_to_radians(camera.angle - 90));
 
         movementVector.add(moveLeft);
         // camera.position.add(
@@ -301,7 +318,7 @@ function moveCamera() {
       case "d":
         let moveRight = Vector2.fromAngle(
           degrees_to_radians(camera.angle + 90)
-        ).multiply(speed);
+        );
 
         movementVector.add(moveRight);
 
@@ -338,7 +355,10 @@ function moveCamera() {
           Ray.castRay(mainmenuLevel, ray, camera.angle).object == enemySprite
         ) {
           console.log("hit");
-          enemyTextureLoader.setTextureLoader(1);
+          enemyTextureLoader.setTextureLoader(
+            enemySpriteHurtAnimationTimings[enemySpriteAnimationIndex]
+              .animationIndex
+          );
           enemyHp -= gunDamage;
           enemySpriteHurtAnimation = true;
           enemySpriteHurtAnimationStart = Date.now();
@@ -367,16 +387,16 @@ function moveCamera() {
 
     camera.position.add(new Vector2(movementVector.x, 0));
     //if (detectCollision(mainmenuLevel, camera)) {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 20; i++) {
       if (!detectCollision(mainmenuLevel, camera)) continue;
-      camera.position.subtract(new Vector2(movementVector.x / 10, 0));
+      camera.position.subtract(new Vector2(movementVector.x / 20, 0));
     }
 
     camera.position.add(new Vector2(0, movementVector.y));
     //if (detectCollision(mainmenuLevel, camera)) {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 20; i++) {
       if (!detectCollision(mainmenuLevel, camera)) continue;
-      camera.position.subtract(new Vector2(0, movementVector.y / 10));
+      camera.position.subtract(new Vector2(0, movementVector.y / 20));
     }
   });
 
