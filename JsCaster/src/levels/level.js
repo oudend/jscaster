@@ -271,8 +271,8 @@ class Level {
    */
   addPolygon(polygon) {
     this.polygons.push(polygon);
-    this.#addPolygonToGrid(polygon, this.polygons.length - 1);
-    console.log(this.grid);
+    //this.#addPolygonToGrid(polygon, this.polygons.length - 1);
+    //console.log(this.grid);
     return polygon;
   }
 
@@ -281,9 +281,16 @@ class Level {
     return sprite;
   }
 
-  removePolygon(polygon) {}
+  removePolygon(polygon) {
+    const index = this.polygons.indexOf(polygon);
+    if (index > -1) this.polygons.splice(index, 1);
+    //this.#removePolygonFromGrid(polygon);
+  }
 
-  removeSprite(sprite) {}
+  removeSprite(sprite) {
+    const index = this.sprites.indexOf(sprite);
+    if (index > -1) this.sprites.splice(index, 1);
+  }
 
   /**
    * Adds light to the level.

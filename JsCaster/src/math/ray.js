@@ -118,7 +118,7 @@ class Ray {
   //TODO: eventually make the camera use this.
   //! This is pretty horribly unoptimized but after the
   //! grid implementation it will be fine(r).
-  static castRay(level, ray, cameraAngle) {
+  static castRay(level, ray, cameraAngle, ignoreSprites = false) {
     // const polygonsHit = [];
     // const spritesHit = [];
 
@@ -153,6 +153,14 @@ class Ray {
         closestHitDistance = distance;
         closestIntersection = intersection;
       }
+    }
+
+    if (ignoreSprites) {
+      return {
+        object: closestObject,
+        distance: closestHitDistance,
+        intersection: closestIntersection,
+      };
     }
 
     for (var j = 0; j < level.sprites.length; j++) {

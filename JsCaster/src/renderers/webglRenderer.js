@@ -51,7 +51,7 @@ class WebglRenderer {
 
     this.baseCtx = this.baseCanvas.getContext("2d");
 
-    this.maxTextures = 10;
+    this.maxTextures = 11;
 
     var vs = `#version 300 es
       // an attribute is an input (in) to a vertex shader.

@@ -20,14 +20,14 @@ const defaultTextureLoader = new TextureLoader(
   new Vector2(0.25, 1)
 );
 
-const secondaryTextureLoader = new TextureLoader(
-  "../../assets/bricks.jpg",
-  false,
-  true,
-  false,
-  "repeat",
-  new Vector2(1, 1)
-);
+// const secondaryTextureLoader = new TextureLoader(
+//   "../../assets/bricks.jpg",
+//   false,
+//   true,
+//   false,
+//   "repeat",
+//   new Vector2(1, 1)
+// );
 
 mainmenuLevel.setFloorTexture(
   "../../assets/bricks.jpg",
@@ -45,7 +45,7 @@ mainmenuLevel.addPolygon(
   new Polygon(
     [new Vector2(100, 500), new Vector2(10, 800), new Vector2(400, 600)],
     400
-  ).setTextureLoader(secondaryTextureLoader)
+  ).setTextureLoader(defaultTextureLoader)
 );
 
 mainmenuLevel.addPolygon(
