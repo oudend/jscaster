@@ -87,6 +87,16 @@ class Polygon {
     }
   }
 
+  /**
+   * Returns a polygon with a circle shape.
+   *
+   * @static
+   * @param {Vector2} center - The center of the circle.
+   * @param {number} [radius=60] - The radius of the circle.
+   * @param {number} [edges=5] - The number of edges of the circle.
+   * @param {number} [height=undefined] - The height of the polygon.
+   * @returns {Polygon}
+   */
   static circle(center, radius = 60, edges = 5, height = undefined) {
     var points = [];
 
@@ -100,6 +110,15 @@ class Polygon {
     return new Polygon(points, height);
   }
 
+  /**
+   * Returns a polygon with a square shape.
+   *
+   * @static
+   * @param {*} center - The center of the square.
+   * @param {*} radius - The radius of the square.
+   * @param {*} [height=undefined] - The height of the polygon.
+   * @returns {Polygon}
+   */
   static square(center, radius, height = undefined) {
     var points = [];
 
@@ -111,29 +130,5 @@ class Polygon {
     return new Polygon(points, height);
   }
 }
-
-// Polygon.circle = function (center, radius = 60, edges = 5) {
-//   var points = [];
-
-//   var n_angles = (2 * Math.PI) / edges;
-//   for (let i = 0; i < edges; i++) {
-//     let x = center.x + radius * Math.cos(i * n_angles);
-//     let y = center.y + radius * Math.sin(i * n_angles);
-//     points.push(new Vector2(x, y));
-//   }
-
-//   return new Polygon(points);
-// };
-
-// Polygon.square = function (center, radius) {
-//   var points = [];
-
-//   points.push(new Vector2(center.x - radius, center.y + radius));
-//   points.push(new Vector2(center.x - radius, center.y - radius));
-//   points.push(new Vector2(center.x + radius, center.y - radius));
-//   points.push(new Vector2(center.x + radius, center.y + radius));
-
-//   return new Polygon(points);
-// };
 
 export { Polygon };

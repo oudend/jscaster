@@ -247,7 +247,8 @@ class WebglRenderer {
           }
 
           if(ceilingTextureLoaded != 1 || isFloor) {
-            fragColor = mix( vec4(0., 0., 0., 1.), vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a);
+            vec3 gradient = mix(vec3(0.,0.,.7), vec3(.8,.8,.9), resolution.y / 2. / (gl_FragCoord.y) );
+            fragColor = mix( vec4(gradient, 1.), vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a);
             return;
           }
 
@@ -298,7 +299,7 @@ class WebglRenderer {
           if(data3.r == 1.) {
             float textureHeight = data3.b;
 
-            int closestYCoord = int(round( ((textureHeight) / (-height+2.)) * (gl_FragCoord.y-(y + height)+1.) ));
+            int closestYCoord = int(round( ((textureHeight) / (-height+4.)) * (-height+1. - (gl_FragCoord.y-(y + height))) ));
 
             int textureIndex = int(data3.a);
 
@@ -635,6 +636,8 @@ class WebglRenderer {
         textureHeight;
       this.webglData[this.resolution * (12 + testModifier) + webglIndex + 3] =
         polygon.texture.textureIndex; //! texture index.
+
+      if (!lightColor) return;
 
       this.webglData[this.resolution * (4 + testModifier) + webglIndex + 2] =
         lightColor.r / 255;

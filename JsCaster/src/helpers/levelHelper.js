@@ -66,7 +66,13 @@ class LevelHelper {
         polygon.texture.textureImage,
         "repeat"
       );
-      pattern.setTransform({ a: 0.25, d: 0.25 });
+
+      //? make it fit into the polygon
+
+      pattern.setTransform({
+        a: (this.level.width / polygon.texture.textureImage.width) * 2,
+        d: this.level.height / polygon.texture.textureImage.height,
+      });
       this.ctx.fillStyle = pattern;
       //this.ctx.fill();
     }

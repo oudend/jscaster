@@ -1,15 +1,4 @@
-import {
-  Camera,
-  Vector2,
-  LevelHelper,
-  RendererHelper,
-  WebglRenderer,
-  Sprite,
-  MultiTextureLoader,
-  TextureLoader,
-  Ray,
-  LineSegment,
-} from "../../src/jscaster.js";
+import { Vector2 } from "../../src/jscaster.js";
 
 class SimpleEnemy {
   constructor(sprite, target, health, speed, damage, onDeath) {
@@ -66,33 +55,16 @@ class SimpleEnemy {
     );
   }
 
-  //   let enemySpriteAnimationTiming =
-  //     enemySpriteHurtAnimationTimings[enemySpriteAnimationIndex];
+  cancelAnimation() {
+    if (!this.animationRunning) return;
+    //console.log(this.animations[this.currentAnimation], this.animationRunning);
+    const name = this.currentAnimation;
 
-  //   if (
-  //     enemySpriteHurtAnimation &&
-  //     Date.now() - enemySpriteHurtAnimationStart >
-  //       enemySpriteAnimationTiming.duration
-  //   ) {
-  //     if (
-  //       enemySpriteAnimationIndex + 1 >=
-  //       enemySpriteHurtAnimationTimings.length
-  //     ) {
-  //       enemySpriteAnimationIndex = 0;
-  //       enemySpriteHurtAnimation = false;
-  //       enemyTextureLoader.setTextureLoader(0);
-  //     } else {
-  //       let textureLoaderIndex =
-  //         enemySpriteHurtAnimationTimings[enemySpriteAnimationIndex + 1]
-  //           .animationIndex;
-
-  //       enemySpriteAnimationIndex++;
-
-  //       enemySpriteHurtAnimationStart = Date.now();
-
-  //       enemyTextureLoader.setTextureLoader(textureLoaderIndex);
-  //     }
-  //   }
+    this.animations[name].running = false;
+    this.animations[name].index = 0;
+    this.animationRunning = false;
+    this.currentAnimation = "";
+  }
 
   #handleAnimations() {
     for (let animation of Object.values(this.animations)) {

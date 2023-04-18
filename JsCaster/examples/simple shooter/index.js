@@ -12,26 +12,32 @@ import {
 } from "../../src/jscaster.js";
 
 import { degrees_to_radians } from "../../src/utils.js";
-import { mainmenuLevel } from "../levels/mainmenu.js";
+import { mainmenuLevel } from "../levels/simpleShooterLevel.js";
 import Stats from "../../lib/stats.module.js";
 import { SimpleEnemy } from "./simpleEnemy.js";
 
-const camera = new Camera(new Vector2(800, 300), 180, 70, 1000);
+const camera = new Camera(new Vector2(800, 300), 180, 90, 1000);
+const renderer = new WebglRenderer(1000, 1000, camera, document.body);
+const levelHelper = new LevelHelper(mainmenuLevel, true);
+const rendererHelper = new RendererHelper(renderer, mainmenuLevel, true);
 
-const renderer = new WebglRenderer(450, 450, camera, document.body);
+renderer.dom = document.body;
+renderer.canvas.style.width = `${window.innerWidth}px`;
+renderer.canvas.style.height = `${window.innerHeight}px`;
+
+renderer.render(mainmenuLevel);
+levelHelper.render();
+rendererHelper.render();
+rendererHelper.canvas.classList.add("minimap");
 
 const gunIdleImage = document.getElementById("gun_idle");
 const gunShootImage = document.getElementById("gun_shoot");
 
-//renderer.canvas.style.width = `${200}px`;
-//renderer.canvas.style.height = `${300}px`;
+const playerHealthElement = document.getElementById("health");
+const playerDamageScreenElement = document.getElementById("dmgScreen");
+const mainmenuElement = document.getElementById("mainmenu");
 
-renderer.dom = document.body;
-
-// renderer.canvas.height = 500;
-renderer.canvas.style.width = `${window.innerWidth}px`;
-renderer.canvas.style.height = `${window.innerHeight}px`;
-
+//? gun setup
 gunShootImage.style.visibility = "hidden";
 
 var gunSize = Math.min(window.innerHeight / 2, window.innerWidth / 2);
@@ -48,12 +54,29 @@ gunIdleImage.style.left = `${gunLeft}px`;
 gunShootImage.style.left = `${gunLeft}px`;
 gunIdleImage.style.bottom = `${gunY}px`;
 gunShootImage.style.bottom = `${gunY}px`;
+//? gun setup
 
-const levelHelper = new LevelHelper(mainmenuLevel, true);
-const rendererHelper = new RendererHelper(renderer, mainmenuLevel, true);
+//? button setup
+const startButton = document.getElementById("startButton");
+const restartButton = document.getElementById("restartButton");
+const exitButton = document.getElementById("exitButton");
 
-// document.body.appendChild(levelHelper.canvas);
+startButton.onclick = () => {
+  requestAnimationFrame(animate);
+  run = true;
+  startButton.innerText = "CONTINUE";
+  mainmenuElement.style.visibility = "hidden";
+};
+restartButton.onclick = () => {
+  requestAnimationFrame(animate);
+  restart();
+  run = true;
+  mainmenuElement.style.visibility = "hidden";
+};
+exitButton.onclick = () => window.close();
+//? gun setup
 
+//? ememy texture setup
 const enemyTextureLoaderIdle = new TextureLoader("../../assets/enemy/Idle.png");
 
 const enemyTextureLoaderHurt1 = new TextureLoader(
@@ -76,9 +99,6 @@ const enemyTextureLoaderDeath3 = new TextureLoader(
   "../../assets/enemy/Death3.png"
 );
 
-const enemyTextureLoaderAttack3 = new TextureLoader(
-  "../../assets/enemy/Attack3.png"
-);
 const enemyTextureLoaderAttack4 = new TextureLoader(
   "../../assets/enemy/Attack4.png"
 );
@@ -94,47 +114,91 @@ const enemyTextureLoader = new MultiTextureLoader([
   enemyTextureLoaderDeath1,
   enemyTextureLoaderDeath2,
   enemyTextureLoaderDeath3,
-  enemyTextureLoaderAttack3,
   enemyTextureLoaderAttack4,
   enemyTextureLoaderAttack5,
 ]);
+//? ememy texture setup
 
+//? enemy setup
 const enemySprite = mainmenuLevel.addSprite(
   new Sprite(enemyTextureLoader, new Vector2(200, 200), 0, 33, 70, true)
 );
 
+const cameraTarget = {
+  get position() {
+    return Vector2.add(
+      camera.position,
+      Vector2.fromAngle(degrees_to_radians(camera.angle)).multiply(10)
+    );
+  },
+};
+
 const enemy = new SimpleEnemy(
   enemySprite,
-  cameraTarget(camera),
+  cameraTarget,
   100,
   1.5,
   10,
   onEnemyDeath.bind(this)
 );
 
-enemy.update();
+enemy.addAnimation(
+  "took_damage",
+  [
+    { duration: 100, animationIndex: 1 },
+    { duration: 205, animationIndex: 2 },
+    { duration: 100, animationIndex: 3 },
+    { duration: 0, animationIndex: 0 },
+  ],
+  () => {
+    if (!enemy.isDead) enemy.target = cameraTarget;
+  }
+);
 
-var enemyHp = 100;
+enemy.addAnimation(
+  "death",
+  [
+    { duration: 100, animationIndex: 4 },
+    { duration: 205, animationIndex: 5 },
+    { duration: 2000, animationIndex: 6 },
+  ],
+  () => {
+    console.log("enemy dead");
 
-renderer.render(mainmenuLevel);
+    enemy.health = 100;
+    enemy.isDead = false;
 
-levelHelper.render();
+    enemy.sprite.textureLoader.setTextureLoader(0);
 
-rendererHelper.render();
+    enemy.sprite.position = new Vector2(
+      Math.random() * mainmenuLevel.width,
+      Math.random() * mainmenuLevel.height
+    );
 
-rendererHelper.canvas.classList.add("minimap");
+    enemy.target = cameraTarget;
+  }
+);
 
-var stats = new Stats();
-stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-document.body.appendChild(stats.dom);
+enemy.addAnimation(
+  "attack",
+  [
+    { duration: 100, animationIndex: 7 },
+    { duration: 205, animationIndex: 7 },
+    { duration: 200, animationIndex: 8 },
+    { duration: 0, animationIndex: 0 },
+  ],
+  () => {
+    playerHealth -= enemy.damage;
+    playerHealthElement.innerText = playerHealth;
+    playerDamageScreenStart = Date.now();
+    playerDamageScreenElement.style.visibility = "visible";
+  }
+);
+//? enemy setup
 
-var turnSpeed = 2;
-
-var keys = {};
-
-//! very ugly code but the engine is what needs to look good anyways
-
-//var count = 0;
+//? player parameters
+var playerDamageScreenDuration = 300;
+var playerDamageScreenStart = 0;
 
 var gunShootAnimationDuration = 100; //1000 ms
 var gunShootAnimation = false;
@@ -147,60 +211,25 @@ var gunShootCooldownDuration = 1000;
 var gunShootCooldown = false;
 var gunShootCooldownStart = 100; //1000 ms
 
-// var gunShootAudio = new Audio("../../assets/sounds/gun.mp3");
-
-//var enemySpriteHurtAnimationDuration = 175; //1000 ms
-// var enemySpriteHurtAnimation = false;
-// var enemySpriteAnimationIndex = 0;
-// var enemySpriteHurtAnimationStart = 100;
-
-enemy.addAnimation(
-  "took_damage",
-  [
-    { duration: 100, animationIndex: 1 },
-    { duration: 205, animationIndex: 2 },
-    { duration: 100, animationIndex: 3 },
-    { duration: 0, animationIndex: 0 },
-  ],
-  () => {
-    if (!enemy.isDead) enemy.target = cameraTarget(camera);
-  }
-);
-
-enemy.addAnimation(
-  "death",
-  [
-    { duration: 100, animationIndex: 4 },
-    { duration: 205, animationIndex: 5 },
-    { duration: 1000, animationIndex: 6 },
-  ],
-  () => {
-    console.log("enemy dead");
-    mainmenuLevel.removeSprite(enemy.sprite);
-  }
-);
-
-enemy.addAnimation(
-  "attack",
-  [
-    { duration: 100, animationIndex: 7 },
-    { duration: 205, animationIndex: 8 },
-    { duration: 200, animationIndex: 9 },
-    { duration: 0, animationIndex: 0 },
-  ],
-  () => (playerHealth -= enemy.damage)
-); //TODO: FLASH THE SCREEN RED OR SOMETHING TO INDICATE DAMAGE
-
-//removeSprite(sprite)
-
 var gunDamage = 15;
 var playerHealth = 100;
 
-var speed = 2.15;
+var playerSpeed = 2.15;
+
+var turnplayerSpeed = 2;
+
+var gunBobValue = 0;
+var gunBobIntensity = 0.1;
+var gunBobMultiplier = 2;
+
+var gunRecoil = 20;
+//? player parameters
 
 var run = true;
 
-requestAnimationFrame(animate);
+var stats = new Stats();
+stats.showPanel(0);
+document.body.appendChild(stats.dom);
 
 function animate() {
   stats.begin();
@@ -210,43 +239,40 @@ function animate() {
   handleGunAnimations();
   enemy.update();
   handleEnemies();
+
+  if (Date.now() - playerDamageScreenStart > playerDamageScreenDuration) {
+    playerDamageScreenElement.style.visibility = "hidden";
+  }
+
   stats.end();
 
   if (playerHealth <= 0) {
-    return;
+    restart();
   }
 
-  requestAnimationFrame(animate);
+  if (run) requestAnimationFrame(animate);
+}
+
+function restart() {
+  enemy.sprite.position = new Vector2(200, 200);
+  enemy.isDead = false;
+  enemy.health = 100;
+
+  enemy.cancelAnimation();
+  enemy.sprite.textureLoader.setTextureLoader(0);
+
+  camera.position = new Vector2(800, 300);
+  camera.angle = 180;
+
+  playerHealth = 100;
+  playerHealthElement.innerText = playerHealth;
 }
 
 function handleEnemies() {
   if (Vector2.distance(enemy.sprite.position, camera.position) < 16) {
-    enemy.startAnimation("attack", false);
+    if (playerHealth > 0) enemy.startAnimation("attack", false);
   }
 }
-
-function cameraTarget(camera) {
-  //TODO! does not need to be a function
-  const target = {
-    get position() {
-      return Vector2.add(
-        camera.position,
-        Vector2.fromAngle(degrees_to_radians(camera.angle)).multiply(10)
-      );
-    },
-  };
-
-  console.log(target);
-
-  return target;
-}
-
-// const enemySpeed = 1.5;
-// const deathDistance = 2;
-
-var headBobValue = 0;
-var headBobIntensity = 0.1;
-var headBobMultiplier = 2;
 
 function onEnemyDeath() {
   enemy.target = undefined;
@@ -283,75 +309,9 @@ function handleGunAnimations() {
   }
 }
 
-// function gameOver() {
-//   run = false; //? oldschool cool
-// }
+const collisionBoxSize = 10;
 
-// function handleEnemy() {
-//   //? enemy should constantly move towards the player.
-
-//   let enemySpriteAnimationTiming =
-//     enemySpriteHurtAnimationTimings[enemySpriteAnimationIndex];
-
-//   if (
-//     enemySpriteHurtAnimation &&
-//     Date.now() - enemySpriteHurtAnimationStart >
-//       enemySpriteAnimationTiming.duration
-//   ) {
-//     if (
-//       enemySpriteAnimationIndex + 1 >=
-//       enemySpriteHurtAnimationTimings.length
-//     ) {
-//       enemySpriteAnimationIndex = 0;
-//       enemySpriteHurtAnimation = false;
-//       enemyTextureLoader.setTextureLoader(0);
-//     } else {
-//       let textureLoaderIndex =
-//         enemySpriteHurtAnimationTimings[enemySpriteAnimationIndex + 1]
-//           .animationIndex;
-
-//       enemySpriteAnimationIndex++;
-
-//       enemySpriteHurtAnimationStart = Date.now();
-
-//       enemyTextureLoader.setTextureLoader(textureLoaderIndex);
-//     }
-//   }
-
-//   if (enemyHp <= 0) {
-//     enemyHp = 100;
-//     //? reset enemy position to random point inside level
-
-//     enemySprite.position = new Vector2(
-//       Math.random() * mainmenuLevel.width,
-//       Math.random() * mainmenuLevel.height
-//     );
-//   }
-
-//   const distance = Vector2.distance(camera.position, enemySprite.position);
-
-//   if (distance < deathDistance) {
-//     gameOver();
-//   }
-
-//   if (enemySpriteHurtAnimation) return;
-
-//   const direction = Vector2.subtract(
-//     camera.position,
-//     enemySprite.position
-//   ).divide(distance);
-
-//   // const dx = (camera.position.x - enemySprite.position.x) / distance;
-//   // const dy = (camera.position.y - enemySprite.position.y) / distance;
-
-//   enemySprite.position.x += direction.x * enemySpeed;
-//   enemySprite.position.y += direction.y * enemySpeed;
-// }
-
-//? left, right, up, down
-const boxSize = 10;
-
-function getCameraCollisionBox(camera) {
+function getCameraCollisionBox(camera, boxSize) {
   //? right, left, bottom, up
   return [
     new LineSegment(
@@ -373,8 +333,8 @@ function getCameraCollisionBox(camera) {
   ];
 }
 
-function detectCollision(level, camera) {
-  const collisionBox = getCameraCollisionBox(camera);
+function detectCollision(level, camera, boxSize) {
+  const collisionBox = getCameraCollisionBox(camera, boxSize);
 
   for (let lineSegment of collisionBox) {
     const raycast = Ray.castRay(
@@ -383,8 +343,6 @@ function detectCollision(level, camera) {
       camera.angle,
       true
     );
-
-    //console.log(raycast, lineSegment);
 
     if (raycast.object !== undefined) return true;
   }
@@ -401,52 +359,29 @@ function moveCamera() {
     switch (key) {
       case "w":
         let moveForward = Vector2.fromAngle(degrees_to_radians(camera.angle));
-
         movementVector.add(moveForward);
-
-        // camera.position = futurePosition;
         break;
       case "s":
         let moveBackward = Vector2.fromAngle(
           degrees_to_radians(camera.angle - 180)
         );
-
         movementVector.add(moveBackward);
-
-        // camera.position.add(
-        //   Vector2.fromAngle(degrees_to_radians(camera.angle - 180)).multiply(
-        //     speed
-        //   )
-        // );
         break;
       case "a":
         let moveLeft = Vector2.fromAngle(degrees_to_radians(camera.angle - 90));
-
         movementVector.add(moveLeft);
-        // camera.position.add(
-        //   Vector2.fromAngle(degrees_to_radians(camera.angle - 90)).multiply(
-        //     speed
-        //   )
-        // );
         break;
       case "d":
         let moveRight = Vector2.fromAngle(
           degrees_to_radians(camera.angle + 90)
         );
-
         movementVector.add(moveRight);
-
-        // camera.position.add(
-        //   Vector2.fromAngle(degrees_to_radians(camera.angle + 90)).multiply(
-        //     speed
-        //   )
-        // );
         break;
       case "ArrowRight":
-        camera.angle += turnSpeed;
+        camera.angle += turnplayerSpeed;
         break;
       case "ArrowLeft":
-        camera.angle -= turnSpeed;
+        camera.angle -= turnplayerSpeed;
         if (camera.angle < 0) camera.angle = 359;
         break;
       case " ":
@@ -456,75 +391,43 @@ function moveCamera() {
         gunShootAnimation = true;
         gunShootAnimationStart = Date.now();
 
-        gunY = -10;
+        gunY = gunY + gunRecoil;
 
         gunIdleImage.style.bottom = `${gunY}px`;
         gunShootImage.style.bottom = `${gunY}px`;
-
-        // // gunShootAudio.currentTime = 0;
-        // // gunShootAudio.play();
-
-        //? raycast from the camera position in the shooting direction and check if it intersects with the sprites lineSegment
-
         const ray = new Ray(camera.position, camera.angle, 1000);
 
         if (
           Ray.castRay(mainmenuLevel, ray, camera.angle).object == enemySprite
         ) {
-          console.log("hit");
-
-          // enemyTextureLoader.setTextureLoader(
-          //   enemySpriteHurtAnimationTimings[enemySpriteAnimationIndex]
-          //     .animationIndex
-          // );
-
           if (enemy.isDead) break;
 
           enemy.target = undefined;
           enemy.startAnimation("took_damage");
           enemy.health -= gunDamage;
-
-          // enemyTextureLoader.setTextureLoader(
-          //   enemySpriteHurtAnimationTimings[enemySpriteAnimationIndex]
-          //     .animationIndex
-          // );
-
-          // enemySpriteHurtAnimation = true;
-          // enemySpriteHurtAnimationStart = Date.now();
         }
-
         break;
-      // case "ArrowUp":
-      //   camera.verticalAngle += turnSpeed * 4;
-      //   break;
-      // case "ArrowDown":
-      //   camera.verticalAngle -= turnSpeed * 4;
-      //   break;
-      // case "g":
-      //   renderer.floorOffset -= 2;
-      //   break;
-      // case "t":
-      //   renderer.floorOffset += 2;
-      //   break;
+      case "Escape":
+        run = false;
+        mainmenuElement.style.visibility = "visible";
+        break;
     }
 
     camera.angle = camera.angle % 360;
 
     if (movementVector.x == 0 && movementVector.y == 0) return;
 
-    movementVector.normalize().multiply(speed);
+    movementVector.normalize().multiply(playerSpeed);
 
     camera.position.add(new Vector2(movementVector.x, 0));
-    //if (detectCollision(mainmenuLevel, camera)) {
     for (let i = 0; i < 20; i++) {
-      if (!detectCollision(mainmenuLevel, camera)) continue;
+      if (!detectCollision(mainmenuLevel, camera, collisionBoxSize)) continue;
       camera.position.subtract(new Vector2(movementVector.x / 20, 0));
     }
 
     camera.position.add(new Vector2(0, movementVector.y));
-    //if (detectCollision(mainmenuLevel, camera)) {
     for (let i = 0; i < 20; i++) {
-      if (!detectCollision(mainmenuLevel, camera)) continue;
+      if (!detectCollision(mainmenuLevel, camera, collisionBoxSize)) continue;
       camera.position.subtract(new Vector2(0, movementVector.y / 20));
     }
   });
@@ -534,24 +437,22 @@ function moveCamera() {
       ([key, value]) => ["w", "a", "s", "d"].includes(key) && value === true
     )
   ) {
-    headBobValue += headBobIntensity;
+    gunBobValue += gunBobIntensity;
 
     let headBobSin =
-      headBobMultiplier / 2 - Math.sin(headBobValue) * headBobMultiplier;
+      gunBobMultiplier / 2 - Math.sin(gunBobValue) * gunBobMultiplier;
     let headBobCos =
-      headBobMultiplier / 2 - Math.cos(headBobValue) * headBobMultiplier;
+      gunBobMultiplier / 2 - Math.cos(gunBobValue) * gunBobMultiplier;
 
     gunIdleImage.style.bottom = `${headBobSin + gunY}px`;
     gunShootImage.style.bottom = `${headBobSin + gunY}px`;
 
     gunIdleImage.style.left = `${gunLeft + headBobCos}px`;
     gunShootImage.style.left = `${gunLeft + headBobCos}px`;
-
-    // console.log("==!=!=!");
-    // debugger;
   }
 }
 
+var keys = {};
 document.addEventListener("keydown", (event) => {
   var key = event.key;
 
