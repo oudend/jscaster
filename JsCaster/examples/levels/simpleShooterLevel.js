@@ -17,7 +17,7 @@ const defaultTextureLoader = new TextureLoader(
   true,
   true,
   "repeat",
-  new Vector2(0.5, 1)
+  new Vector2(0.3, 1)
 );
 
 var backgroundTextureLoader = new TextureLoader(
@@ -26,7 +26,7 @@ var backgroundTextureLoader = new TextureLoader(
   true,
   false,
   "repeat",
-  new Vector2(0.5, 1.2)
+  new Vector2(0.25, 1.2)
 );
 
 mainmenuLevel.walls.textureLoader = backgroundTextureLoader;

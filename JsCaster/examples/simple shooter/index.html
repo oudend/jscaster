@@ -26,6 +26,14 @@
         <button class="button" id="restartButton">RESTART</button>
         <button class="button" id="exitButton">EXIT</button>
       </div>
+
+      <div class="controlsContainer flexColumn">
+        <div>CONTROLS</div>
+        <div>wasd - move forward, left, backward and right</div>
+        <div>left/right arrow - look left/right</div>
+        <div>space - shoot</div>
+        <div>escape - pause game</div>
+      </div>
     </div>
 
     <div class="gun"></div>
@@ -78,6 +86,18 @@
         left: 50%;
         transform: translate(-50%, 0%);
         -ms-transform: translate(-50%, 0%);
+      }
+
+      .controlsContainer {
+        position: absolute;
+        font-size: 10px;
+        gap: 1px;
+        left: 50%;
+        top: 80%;
+        color: rgb(255, 255, 255, 0.7);
+        transform: translate(-50%, 0%);
+        -ms-transform: translate(-50%, 0%);
+        align-items: center;
       }
 
       .buttonContainer {
