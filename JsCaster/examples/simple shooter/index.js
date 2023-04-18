@@ -261,6 +261,8 @@ function restart() {
   enemy.cancelAnimation();
   enemy.sprite.textureLoader.setTextureLoader(0);
 
+  enemy.target = cameraTarget;
+
   camera.position = new Vector2(800, 300);
   camera.angle = 180;
 
