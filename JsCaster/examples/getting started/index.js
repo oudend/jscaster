@@ -6,6 +6,7 @@ import {
   LevelHelper,
   RendererHelper,
   WebglRenderer,
+  Ray,
 } from "../../src/jscaster.js";
 
 //!documentation build --document-exported ./JsCaster/src/jscaster.js -f html -o ./JsCaster/docs
@@ -16,9 +17,13 @@ import { exampleLevel } from "../levels/exampleLevel.js";
 
 import Stats from "../../lib/stats.module.js";
 
-const camera = new Camera(new Vector2(1, 1), 40, 120, 1000);
+const renderPass = /*glsl*/ `
+return vec4( (vec3(min(1., 500./distance))) * color.rgb, color.a);
+`;
 
-const renderer = new WebglRenderer(1200, 1200, camera, document.body);
+const camera = new Camera(new Vector2(1, 1), 40, 120, 100000);
+
+const renderer = new WebglRenderer(1200, 1200, camera, renderPass);
 
 //renderer.canvas.style.width = `${200}px`;
 //renderer.canvas.style.height = `${300}px`;
@@ -69,6 +74,8 @@ function animate() {
   requestAnimationFrame(animate);
 }
 
+// console.clear();
+
 function moveCamera() {
   Object.entries(keys).forEach(([key, value]) => {
     if (!value) return;
@@ -101,6 +108,18 @@ function moveCamera() {
             speed
           )
         );
+        break;
+      case " ":
+        const rayData = Ray.castRay3(
+          exampleLevel,
+          new Ray(camera.position, camera.angle, 1000),
+          camera.angle,
+          undefined,
+          undefined,
+          false,
+          true
+        );
+        console.log(rayData);
         break;
       case "ArrowRight":
         camera.angle += turnSpeed;

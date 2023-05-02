@@ -10,9 +10,11 @@ import {
 import { createProgramFromSources } from "../../lib/webgl-utils.js";
 
 class WebglRenderer {
-  constructor(width = 100, height = 100, camera) {
+  constructor(width = 100, height = 100, camera, renderPass) {
     this.resolution = width;
     this.camera = camera;
+
+    this.renderPass = renderPass;
 
     this.height = height;
 
@@ -66,7 +68,8 @@ class WebglRenderer {
       gl_Position = a_position;
       }
     `;
-    var fs2 = `#version 300 es
+    var fs2 =
+      /*glsl*/ `#version 300 es
       precision highp float;
 
       #define numTextures ${this.maxTextures}
@@ -105,6 +108,14 @@ class WebglRenderer {
       out vec4 fragColor;
       in vec2 fragCoord;
 
+      //? 0 = wall, 1 = floor, 2 = ceiling, 3 = sprite
+      vec4 renderPass(vec4 color, float distance, int renderType) {
+        ` +
+      (this.renderPass ? this.renderPass : "return color;") +
+      /*glsl*/ `
+      }
+      
+
       void main() {
 
         vec4 wallInformation = texelFetch(data, ivec2(gl_FragCoord.x, 0), 0);
@@ -140,7 +151,7 @@ class WebglRenderer {
         vec4 floorAndCeilingData2 = texelFetch(floorAndCeilingData, ivec2(gl_FragCoord.x, 1), 0);
         vec4 floorAndCeilingData3 = texelFetch(floorAndCeilingData, ivec2(gl_FragCoord.x, 2), 0);
 
-        vec4 opacityColor = vec4(0.);
+        vec4 opacityColor = vec4(0., 0., 0., 0.);
 
         if(spriteCount > 0) {
           for(int i = 0; i < spriteCount; i++) {
@@ -156,6 +167,7 @@ class WebglRenderer {
             float spriteHeight = spriteData1.a * 255.;
             float spriteY = resolution.y - spriteData2.g * 255.;
             bool isTransparent = spriteData2.b == 1. ? true : false;
+            float distance = spriteData2.a * 255.;
 
             //? temporary solution.. DO NOT PUSH TO PROD
             if(isSprite == 0.) 
@@ -170,23 +182,30 @@ class WebglRenderer {
 
             switch(textureIndex) {
               // we are not allowed to use i as index to access texture in array in current version of GLSL
-              ${new Array(this.maxTextures)
-                .fill(0)
-                .map(
-                  (_, i) => `case ${i}:
-                spriteColor = texelFetch(polygonTextures[${i}], ivec2(textureX, closestYCoord), 0);
+              ` +
+      new Array(this.maxTextures)
+        .fill(0)
+        .map(
+          (_, i) => /*glsl*/ `case ${i}:
+                          spriteColor = texelFetch(polygonTextures[${i}], ivec2(textureX, closestYCoord), 0);
 
-                fragColor = vec4(spriteColor) + opacityColor * opacityColor.a;    
-                
-                if(!(isTransparent && spriteColor.a < 1.))
-                  return;
-          
-                opacityColor += spriteColor;
+                          //spriteColor = mix(spriteColor.rgba, vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a);
 
-                break;
-            `
-                )
-                .join("")}
+                          //mix(color.rgba, vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a)
+
+                          fragColor = renderPass(mix(spriteColor.rgba, vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a), distance, 3);    
+                          
+                          if(!(isTransparent && spriteColor.a < 1.))
+                            return;
+                    
+                          opacityColor += spriteColor;
+
+                          break;
+                      `
+        )
+        .join("") +
+      /*glsl*/ `
+              
               default: break;
             }
 
@@ -242,7 +261,7 @@ class WebglRenderer {
             int floorTileX = int( abs(floorXEnd * floorTextureXscale + floorTextureOffset.x) / floorTextureScale.x ) % floorTextureDimensions.x;
             int floorTileY = int( abs(floorYEnd * floorTextureYscale + floorTextureOffset.y) / floorTextureScale.y ) % floorTextureDimensions.y;
             //! / floorTextureScale.x
-            fragColor = mix( texelFetch(floorTexture, ivec2(floorTileX, floorTileY), 0), vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a);
+            fragColor = renderPass(mix( texelFetch(floorTexture, ivec2(floorTileX, floorTileY), 0), vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a), floorDiagonalDistance, 1);
             return;
           }
 
@@ -271,11 +290,11 @@ class WebglRenderer {
           int ceilingTileX = int( abs(ceilingXEnd * ceilingTextureXscale + ceilingTextureOffset.x) / ceilingTextureScale.x ) % ceilingTextureDimensions.x; //int( mod(ceilingXEnd * ceilingTextureXscale, float(ceilingTextureDimensions.x) ) ); 
           int ceilingTileY = int( abs(ceilingYEnd * ceilingTextureYscale + ceilingTextureOffset.y) / ceilingTextureScale.y ) % ceilingTextureDimensions.y; //int( mod(ceilingYEnd * ceilingTextureYscale, float(ceilingTextureDimensions.y) ) );
 
-          fragColor = mix( texelFetch(ceilingTexture, ivec2(ceilingTileX, ceilingTileY), 0) + opacityColor * opacityColor.a, vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a);
+          fragColor = renderPass(mix( texelFetch(ceilingTexture, ivec2(ceilingTileX, ceilingTileY), 0) + opacityColor * opacityColor.a, vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a), ceilingDiagonalDistance, 2);
           return;
 
 
-          fragColor = mix( vec4(0., 0., 0., 1.), vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a);
+          fragColor = renderPass(mix( vec4(0., 0., 0., 1.), vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a), ceilingDiagonalDistance, 2);
           return;
         }
 
@@ -288,6 +307,8 @@ class WebglRenderer {
           vec4 data1 = texelFetch(data, ivec2(gl_FragCoord.x, 1 + 3 * i ), 0);
           vec4 data2 = texelFetch(data, ivec2(gl_FragCoord.x, 2 + 3 * i ), 0);
           vec4 data3 = texelFetch(data, ivec2(gl_FragCoord.x, 3 + 3 * i ), 0);
+
+          float distance = data1.a * 255.;
         
           float y = resolution.y - data1.r * 255.;
           float height = -(data1.g * 255.);
@@ -305,25 +326,27 @@ class WebglRenderer {
 
             switch(textureIndex) {
               // we are not allowed to use i as index to access texture in array in current version of GLSL
-              ${new Array(this.maxTextures)
-                .fill(0)
-                .map(
-                  (_, i) => `case ${i}:
-                fragColor = mix(data2.b * vec4(data1.b, data2.r, data2.g, 1.) + texelFetch(polygonTextures[${i}], ivec2(data3.g, closestYCoord), 0), vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a);
+              ` +
+      new Array(this.maxTextures)
+        .fill(0)
+        .map(
+          (_, i) => `case ${i}:
+                fragColor = renderPass( mix(data2.b * vec4(data1.b, data2.r, data2.g, 1.) + texelFetch(polygonTextures[${i}], ivec2(data3.g, closestYCoord), 0), vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a), distance, 0);
                 
                 return;
           
                 break;
             `
-                )
-                .join("")}
+        )
+        .join("") +
+      /*glsl*/ `
               default: break;
             }
           }
 
           vec4 color = vec4(data1.b, data2.r, data2.g, data2.b);
 
-          fragColor = mix(color.rgba, vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a);
+          fragColor = renderPass(mix(color.rgba, vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a), distance, 0);
           return;
         }
         
@@ -481,6 +504,10 @@ class WebglRenderer {
     );
   }
 
+  setRenderPass(renderPass) {
+    this.renderPass = renderPass;
+  }
+
   set dom(domElement) {
     domElement.appendChild(this.canvas);
 
@@ -577,6 +604,9 @@ class WebglRenderer {
       (this.projectionPlaneCenter + offsetHeight / 2 - wallHeight) / 255;
     this.webglData[this.resolution * (4 + testModifier) + webglIndex + 1] =
       wallHeight / 255;
+
+    this.webglData[this.resolution * (4 + testModifier) + webglIndex + 3] =
+      distance / 255;
 
     //! lights
     var intensity = undefined;
@@ -784,6 +814,10 @@ class WebglRenderer {
     this.webglSpriteData[
       this.resolution * (4 + 8 * spriteIndex) + webglIndex + 2
     ] = sprite.transparent ? 1 : 0;
+
+    this.webglSpriteData[
+      this.resolution * (4 + 8 * spriteIndex) + webglIndex + 3
+    ] = spriteInfo.distance / 255;
   }
 
   #render(level, ray) {
@@ -944,7 +978,8 @@ class WebglRenderer {
     this.gl.uniform1i(this.floorTextureLocation, 1);
     this.gl.uniform1i(this.ceilingTextureLocation, 2);
 
-    this.gl.uniform1iv(this.loadedTextureLocation, this.loadedTextureCount);
+    if (this.loadedTextureCount.length > 0)
+      this.gl.uniform1iv(this.loadedTextureLocation, this.loadedTextureCount);
 
     this.gl.uniform1f(
       this.projectionPlaneCenterLocation,

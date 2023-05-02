@@ -22,15 +22,17 @@ class Camera {
     position,
     angle = 90, //TODO! switch to radians
     //verticalAngle = 0, //? remove. verticalOffset in renderer instead?
-    fov = 60
-    //far = 1000
+    fov = 60,
+    far = 10000
   ) {
     this.position = position;
 
-    this.far = 100000; //far;
+    this.far = far; //far;
     this.angle = angle;
     this.verticalAngle = 0; //verticalAngle;
     this.fov = fov;
+
+    this.heightSort = false;
   }
 
   castRays(level, rays, onrayhit) {
@@ -84,80 +86,19 @@ class Camera {
 
       var transparencyData = [];
       var heightCandidates = [];
-      var heightSort = false;
+      //var heightSort = false;
 
       //? use ray and level grid to only check intersection with plausible lineSegments
 
-      //! setting searchRadius to 1 crashes everything...
-      ////const templineSegments = level.getClosestLineSegmentsToRay(ray, 0);
-
-      // // // console.log(templineSegments);
-      // // // debugger;
-
-      // // //!NOTE: Maybe store the index for the lineSegment as well because it's quite heavy to store an entire class like that when you don't need to
-
-      // // for (var j = 0; j < templineSegments.length; j++) {
-      // //   const lineSegment = templineSegments[j].lineSegment;
-
-      // //   const polygon = level.polygons[templineSegments[j].index];
-
-      // //   const intersection = ray.intersects(lineSegment);
-
-      // //   if (!intersection.intersects) continue;
-
-      // //   const distance = Vector2.distance(intersection.point, this.position);
-
-      // //   const lineSegmentRayInformation = {
-      // //     origin: this.position,
-      // //     direction: direction,
-      // //     intersects: true,
-      // //     hit: intersection.point,
-      // //     angle: direction2,
-      // //     finalangle: angle,
-      // //     closest: true,
-      // //     distance: distance,
-      // //     ray: ray,
-      // //     normal: intersection.normal,
-      // //     polygon: polygon,
-      // //     lineSegment: lineSegment,
-      // //     x: i,
-      // //     spriteInfo: [],
-      // //     heightPass: [],
-      // //   };
-
-      // //   transparencyData.push(lineSegmentRayInformation);
-      // //   heightCandidates.push(lineSegmentRayInformation);
-
-      // //   if (distance > rayInformation.distance && rayInformation.intersects)
-      // //     continue;
-
-      // //   if (distance > closestHitDistance) break;
-
-      // //   rayInformation = lineSegmentRayInformation;
-
-      // //   closestHitDistance = distance;
-
-      // //   //if (rayInformation.intersects) rayHits.push(rayInformation);
-
-      // //   //return rayHits;
-      // // }
-
-      for (var j = 0; j < polygons.length; j++) {
-        const polygon = polygons[j];
-        const lineSegments = polygon.segments;
-
-        if (polygon.height != polygons[Math.max(0, j - 1)].height)
-          //TODO: fix this monstrosity
-          heightSort = true;
-
-        for (var k = 0; k < lineSegments.length; k++) {
-          const lineSegment = lineSegments[k];
-
-          const intersection = ray.intersects(lineSegment);
-
-          if (!intersection.intersects) continue;
-
-          const distance = Vector2.distance(intersection.point, this.position);
+      Ray.castRay3(
+        level,
+        ray,
+        this.angle,
+        (lineSegmentData) => {
+          const polygon = lineSegmentData.polygon;
+          const lineSegment = lineSegmentData.lineSegment;
+          const intersection = lineSegmentData.intersection;
+          const distance = lineSegmentData.distance;
 
           const lineSegmentRayInformation = {
             origin: this.position,
@@ -181,45 +122,32 @@ class Camera {
           heightCandidates.push(lineSegmentRayInformation);
 
           if (distance > rayInformation.distance && rayInformation.intersects)
-            continue;
+            return;
 
-          if (distance > closestHitDistance) break;
+          if (distance > closestHitDistance) return;
 
           rayInformation = lineSegmentRayInformation;
 
           closestHitDistance = distance;
-        }
+        },
+        (spriteData) => {
+          const sprite = spriteData.sprite;
+          const lineSegment = spriteData.lineSegment;
+          const intersection = spriteData.intersection;
+          const distance = spriteData.distance;
 
-        //if (rayInformation.intersects) rayHits.push(rayInformation);
-
-        //return rayHits;
-      }
-
-      for (var j = 0; j < sprites.length; j++) {
-        const sprite = sprites[j];
-
-        // console.log(sprite, sprite.getLineSegment(this.angle));
-
-        // debugger;
-
-        const lineSegment = sprite.getLineSegment(this.angle);
-
-        const intersection = ray.intersects(lineSegment);
-
-        if (!intersection.intersects) continue;
-
-        const distance = Vector2.distance(intersection.point, this.position);
-
-        if (distance < closestHitDistance) {
-          rayInformation.spriteInfo.push({
-            distance: distance,
-            hit: intersection.point,
-            lineSegment: lineSegment,
-            sprite: sprite,
-          });
-          //? this means that the intersected part of the sprite is in front of the walls and should be rendered
-        } //! REWORK ALL THIS SHIT
-      }
+          if (distance < closestHitDistance) {
+            rayInformation.spriteInfo.push({
+              distance: distance,
+              hit: intersection.point,
+              lineSegment: lineSegment,
+              sprite: sprite,
+            });
+          }
+        },
+        false,
+        !this.heightSort
+      );
 
       if (rayInformation.spriteInfo.length > 1) {
         rayInformation.spriteInfo = rayInformation.spriteInfo.sort(
@@ -234,37 +162,9 @@ class Camera {
 
       if (!rayInformation.intersects) continue;
 
-      // // if (heightSort) {
-      // //   const heightPrePass = heightCandidates.sort(
-      // //     (a, b) => a.distance - b.distance
-      // //   );
-
-      // //   const heightPass = [heightPrePass[0]];
-
-      // //   for (var j = 1; j < heightPrePass.length; j++) {
-      // //     if (
-      // //       heightPrePass[j].polygon.height >
-      // //       heightPass[heightPass.length - 1].polygon.height
-      // //     )
-      // //       heightPass.push(heightPrePass[j]);
-      // //   }
-
-      // //   for (var j = heightPass.length - 1; j > -1; j--) {
-      // //     var pass = heightPass[j];
-
-      // //     if (pass !== transparentPass[transparentPass.length - 1])
-      // //       pass.closest = false;
-
-      // //     if (onrayhit) onrayhit(level, pass);
-      // //     rayHits.push(pass);
-      // //   }
-
-      // //   continue;
-      // // }
-
       //TODO: implement properly
 
-      if (heightSort) {
+      if (this.heightSort === true) {
         const heightPrePass = heightCandidates.sort(
           (a, b) => a.distance - b.distance
         );

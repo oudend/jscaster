@@ -24,7 +24,7 @@ class Level {
     this.ceilingHeight = ceilingHeight;
 
     this.grid = [];
-    this.cellSize = 30;
+    this.cellSize = 10;
 
     this.#createGrid();
 
@@ -39,11 +39,13 @@ class Level {
       ceilingHeight //this.height
     );
 
-    this.polygons = [this.walls];
+    this.polygons = [];
     this.sprites = [];
     this.lights = [];
 
-    this.#addPolygonToGrid(this.walls, 0);
+    this.addPolygon(this.walls);
+
+    // this.#addPolygonToGrid(this.walls, 0);
 
     //console.log(this.getClosestLineSegments(new Vector2(0, 0), 1000), "hello");
 
@@ -61,7 +63,7 @@ class Level {
     for (let x = 0; x < Math.floor(this.width / this.cellSize) + 1; x++) {
       this.grid.push([]);
       for (let y = 0; y < Math.floor(this.height / this.cellSize) + 1; y++) {
-        this.grid[x].push([]);
+        this.grid[x].push({ polygons: [], lineSegments: [], polygonIndex: [] });
       }
     }
   }
@@ -71,109 +73,107 @@ class Level {
   // // this.
 
   //? add all the lineSegments in a polygon to the grid using the private function #addLineSegment
-  #addPolygonToGrid(polygon, polygonIndex) {
+  #addPolygonToGrid(polygon) {
+    //, polygonIndex) {
     for (let i = 0; i < polygon.segments.length; i++) {
-      this.#addLineSegmentToGrid(polygon.segments[i], i, polygonIndex);
+      this.#addLineSegmentToGrid(polygon.segments[i], polygon); //i, polygonIndex);
     }
   }
-
-  //? addPolygonToGrid but for sprites. Because it is dynamic maybe not actually..
 
   //? add all intersecting points to the grid of the line segment as an accessor to the line segment.
-  #addLineSegmentToGrid(lineSegment, lineSegmentIndex, polygonIndex) {
-    const x1 = Math.floor(lineSegment.start.x / this.cellSize);
-    const y1 = Math.floor(lineSegment.start.y / this.cellSize);
-    const x2 = Math.floor(lineSegment.end.x / this.cellSize);
-    const y2 = Math.floor(lineSegment.end.y / this.cellSize);
+  #addLineSegmentToGrid(lineSegment, polygon) {
+    const centerTile = this.tileVector(lineSegment.center);
+    this.grid[centerTile.x][centerTile.y].polygons.push(polygon);
+    this.grid[centerTile.x][centerTile.y].lineSegments.push(lineSegment);
 
-    const normalizedDX = lineSegment.dx / lineSegment.length;
-    const normalizedDY = lineSegment.dy / lineSegment.length;
-
-    //? go through all cells that intersect the line segment and add the line segment to those cells.
-
-    // // //?console.log(this.grid, x2, y2);
-    // // for (let x = x1; x <= x2; x++) {
-    // //   for (let y = y1; y <= y2; y++) {
-    // //     this.grid[x][y].push({ lineSegmentIndex: lineSegmentIndex, polygonIndex: polygonIndex });
-    // //   }
-    // // }
+    this.traverseGrid(lineSegment.start, lineSegment.end, (tile) => {
+      this.grid[tile.x][tile.y].polygons.push(polygon);
+      this.grid[tile.x][tile.y].lineSegments.push(lineSegment);
+      //? this.grid[tile.x][tile.y].lineSegments.push({lineSegment: lineSegment, polygonIndex: polygonIndex});
+    });
   }
 
-  //? Get all the line segments that might intersect with the ray based on the grid.
-  getClosestLineSegmentsToRay(ray, searchRadius = 1) {
-    //! DO NOT USE THIS CODE IT IS NOT COMPLETE
-    const x1 = Math.floor(ray.lineSegment.start.x / this.cellSize);
-    const y1 = Math.floor(ray.lineSegment.start.y / this.cellSize);
-    const x2 = Math.floor(ray.lineSegment.end.x / this.cellSize);
-    const y2 = Math.floor(ray.lineSegment.end.y / this.cellSize);
+  #getHelpers(position, direction) {
+    const tile = Math.floor(position / this.cellSize);
 
-    if (searchRadius === 0) return this.grid[x1][y1];
+    var dTile = 0;
+    var dt = 0;
 
-    var lineSegments = [];
+    if (direction > 0) {
+      dTile = 1;
+      dt = ((tile + 1) * this.cellSize - position) / direction;
+    } else {
+      dTile = -1;
+      dt = (tile * this.cellSize - position) / direction;
+    }
 
-    for (let x = x1; x <= x2; x++) {
-      for (let y = y1; y <= y2; y++) {
-        //? loop through the searchRadius and get the surrounding line segments but don't check the same cells twice.
-        lineSegments = [
-          ...lineSegments,
-          ...this.getClosestLineSegments(new Vector2(x, y), searchRadius),
-        ];
+    return [dt, (dTile * this.cellSize) / direction];
+  }
+
+  /**
+   * Traverse all grid cells intersecting with the path from start to end.
+   *
+   * @param {Vector2} start - Start position.
+   * @param {Vector2} end - End position.
+   * @param {function(tile): tile} callback - Function that gets called for each grid cell that is intersected with the path.
+   */
+  traverseGrid(start, end, callback) {
+    //! make sure dx and dy are normalized or whatever they need to be.
+
+    const tile = this.tileVector(start);
+    const endTile = this.tileVector(end);
+
+    const direction = Vector2.subtract(end, start);
+
+    var [dtX, ddtX] = this.#getHelpers(start.x, direction.x);
+    var [dtY, ddtY] = this.#getHelpers(start.y, direction.y);
+
+    callback(tile);
+
+    const dirSignX = direction.x > 0 ? 1 : -1;
+    const dirSignY = direction.y > 0 ? 1 : -1;
+
+    if (direction.x === 0) dtX = Infinity;
+    if (direction.y === 0) dtY = Infinity;
+
+    if (direction.x ** 2 + direction.y ** 2 === 0) return;
+
+    while (true) {
+      if (dtX < dtY) {
+        tile.x += dirSignX;
+        dtY -= dtX;
+        dtX = ddtX; //(dirSignX * this.cellSize) / direction.x;
+      } else {
+        tile.y += dirSignY;
+        dtX -= dtY;
+        dtY = ddtY; //(dirSignY * this.cellSize) / direction.y;
       }
+
+      if (
+        tile.x < 0 ||
+        tile.x > Math.floor(this.width / this.cellSize) ||
+        tile.y < 0 ||
+        tile.y > Math.floor(this.height / this.cellSize)
+      )
+        break;
+
+      if (callback(tile)) break;
+
+      if (Vector2.compare(tile, endTile)) break;
     }
-
-    return lineSegments;
-
-    //! DO NOT USE THIS CODE IT IS NOT COMPLETE
   }
 
-  //? get all the closest line segment to the position using the grid.
-  getClosestLineSegments(position, searchRadius = 1) {
-    const x = Math.floor(position.x / this.cellSize);
-    const y = Math.floor(position.y / this.cellSize);
-
-    if (searchRadius === 0) return this.grid[x][y];
-
-    var lineSegments = [];
-
-    for (let i = -searchRadius; i <= searchRadius; i++) {
-      for (let j = -searchRadius; j <= searchRadius; j++) {
-        const x1 = x + i;
-        const y1 = y + j;
-
-        if (x1 < 0 || x1 >= this.grid.length) continue;
-        if (y1 < 0 || y1 >= this.grid[x1].length) continue;
-
-        lineSegments = [...lineSegments, ...this.grid[x1][y1]];
-
-        //! I don't like this but I'll leave it for now
-        // // for (let lineSegment of this.grid[x1][y1]) {
-        // //   lineSegments.push(lineSegment.lineSegment);
-        // // }
-      }
-    }
-
-    return lineSegments;
-    // }
-    //   const x = Math.floor(position.x / this.cellSize);
-    //   const y = Math.floor(position.y / this.cellSize);
-
-    //   const lineSegments = this.grid[x][y];
-
-    //   return lineSegments;
-  }
-
-  //? function for getting the closest polygon that uses the: getClosestLineSegments function.
-  getClosestPolygons(position) {
-    const lineSegments = this.getClosestLineSegments(position);
-
-    const polygons = [];
-
-    for (let lineSegment of lineSegments) {
-      const polygon = this.polygons[lineSegment.index];
-      if (polygon) polygons.push(polygon);
-    }
-
-    return polygons;
+  /**
+   * Convert a 2d vector from world space to grid cell.
+   *
+   * @param {Vector2} position - 2d world coordinates.
+   * @returns {Vector2}
+   */
+  tileVector(position) {
+    return new Vector2(
+      Math.floor(position.x / this.cellSize),
+      Math.floor(position.y / this.cellSize)
+    );
   }
 
   /**
@@ -271,7 +271,7 @@ class Level {
    */
   addPolygon(polygon) {
     this.polygons.push(polygon);
-    //this.#addPolygonToGrid(polygon, this.polygons.length - 1);
+    this.#addPolygonToGrid(polygon, this.polygons.length - 1);
     //console.log(this.grid);
     return polygon;
   }

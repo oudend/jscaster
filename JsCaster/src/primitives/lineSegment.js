@@ -28,6 +28,8 @@ class LineSegment {
     this.dx = this.end.x - this.start.x;
     this.dy = this.end.y - this.start.y;
 
+    //TODO! these should be normalized lol
+
     this.length = Vector2.distance(this.start, this.end);
   }
 
