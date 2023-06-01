@@ -20,10 +20,12 @@ class LineSegment {
     this.end = end;
     this.index = index;
 
-    this.center = Vector2.add(
-      this.start,
-      Vector2.divide(Vector2.subtract(this.end, this.start), new Vector2(2, 2))
-    );
+    // this.center = Vector2.add(
+    //   this.start,
+    //   Vector2.divide(Vector2.subtract(this.end, this.start), new Vector2(2, 2))
+    // );
+
+    this.center = Vector2.divide(Vector2.add(this.start, this.end), 2);
 
     this.dx = this.end.x - this.start.x;
     this.dy = this.end.y - this.start.y;

@@ -26,7 +26,7 @@ class TextureAtlas {
 
     this.onload = onload;
 
-    // this.textures = [];
+    this.textures = [];
 
     this.texturesX = texturesX;
     this.texturesY = texturesY;
@@ -40,7 +40,8 @@ class TextureAtlas {
     this.ctx = this.canvas.getContext("2d");
 
     for (var source of this.sources) {
-      new Texture(source, size, size, this.#onload.bind(this));
+      this.addSource(source, this.#onload.bind(this));
+      //this.textures.push(new Texture(source, size, size, this.#onload.bind(this)));
     }
   }
 
@@ -53,10 +54,8 @@ class TextureAtlas {
     if (this.loadedTextures >= this.textureLimit) {
       throw new Error("TextureAtlas is full");
     }
-    this.sources.push(source);
-    this.textures.push(
-      new Texture(source, this.size, this.size, this.#onload.bind(this))
-    );
+
+    this.textures.push(new Texture(source, this.size, this.size, onload));
   }
 
   //? combines multiple texture atlases into one. The texture atlases must have the same size.
@@ -75,9 +74,9 @@ class TextureAtlas {
     const textureX = this.loadedTextures % this.texturesX;
     const textureY = Math.floor(this.loadedTextures / this.texturesX);
 
-    //! disclaimer: the above might not work.
+    //  console.log(textureX, textureY, this.loadedTextures);
 
-    // console.log(textureX, textureY);
+    //console.log(textureX, textureY);
 
     this.#writeTextureToAtlas(
       texture,
@@ -97,7 +96,11 @@ class TextureAtlas {
     //console.log(texture, x, y);
     //console.log("image drawn", texture, x, y);
 
-    this.ctx.drawImage(texture, x, y);
+    //console.log(texture, "gotta draw", x, y);
+
+    this.ctx.putImageData(texture.imagedata, x, y);
+
+    //this.ctx.drawImage(texture, x, y);
 
     //this.ctx.fillRect(x, y, this.size, this.size);
   }

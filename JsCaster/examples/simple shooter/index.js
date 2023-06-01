@@ -17,7 +17,7 @@ import Stats from "../../lib/stats.module.js";
 import { SimpleEnemy } from "./simpleEnemy.js";
 
 const camera = new Camera(new Vector2(800, 300), 180, 90, 100000);
-const renderer = new WebglRenderer(1200, 1200, camera);
+const renderer = new WebglRenderer(700, 700, camera);
 const levelHelper = new LevelHelper(mainmenuLevel, true);
 const rendererHelper = new RendererHelper(renderer, mainmenuLevel, true);
 

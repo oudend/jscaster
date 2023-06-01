@@ -3,5 +3,7 @@
     "esversion": 9
   },
   "editor.tabCompletion": "on",
-  "diffEditor.codeLens": true
+  "diffEditor.codeLens": true,
+  "livePreview.debugOnExternalPreview": false,
+  "terminal.integrated.defaultProfile.windows": "Git Bash"
 }

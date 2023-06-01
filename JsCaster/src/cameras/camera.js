@@ -35,8 +35,15 @@ class Camera {
     this.heightSort = false;
   }
 
+  /**
+   * cast rays from camera.
+   *
+   * @param {Level} level
+   * @param {Rays} rays
+   * @param {function} onrayhit
+   * @returns {[]}
+   */
   castRays(level, rays, onrayhit) {
-    //raycount is the same a resolution.
     const start = this.angle - this.fov / 2;
     const end = this.angle + this.fov / 2;
 
@@ -45,12 +52,13 @@ class Camera {
     const increment = (end - start) / rays;
 
     const rayHits = [];
-    //const testRays = [];
+
+    this.intersectionPoints = [];
 
     const polygons = level.polygons;
     const sprites = level.sprites;
 
-    //console.log(level.polygons, level.walls, level.polygons);
+    if (polygons.length === 0) return;
 
     for (var i = 0; i < rays; i++) {
       const direction = start + increment * i;
@@ -78,9 +86,7 @@ class Camera {
         canvasWall: false,
         spriteInfo: [],
         heightPass: [],
-      }; //TODO: this could probably be removed..
-
-      if (polygons.length === 0) break; //! test
+      };
 
       var closestHitDistance = Infinity;
 
@@ -88,17 +94,17 @@ class Camera {
       var heightCandidates = [];
       //var heightSort = false;
 
-      //? use ray and level grid to only check intersection with plausible lineSegments
-
       Ray.castRay3(
         level,
         ray,
         this.angle,
-        (lineSegmentData) => {
+        (lineSegmentData, debugTs) => {
           const polygon = lineSegmentData.polygon;
           const lineSegment = lineSegmentData.lineSegment;
           const intersection = lineSegmentData.intersection;
           const distance = lineSegmentData.distance;
+
+          this.intersectionPoints.push(...debugTs);
 
           const lineSegmentRayInformation = {
             origin: this.position,
@@ -185,16 +191,7 @@ class Camera {
 
       if (onrayhit) onrayhit(level, rayInformation);
       rayHits.push(rayInformation);
-      // testRays.push(
-      //   ...[
-      //     rayInformation.distance + 0.001,
-      //     rayInformation.angle + 0.001,
-      //     rayInformation.finalangle + 0.001,
-      //   ]
-      // );
     }
-    //console.log(testRays);
-    //debugger;
     return rayHits;
   }
 }

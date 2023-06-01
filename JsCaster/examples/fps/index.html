@@ -18,20 +18,29 @@
       }
 
       .minimap {
-        border-radius: 2%;
+        border-radius: 10%;
         position: absolute;
 
-        outline: white outset 1px;
+        outline: white outset 3px;
 
-        width: 400px;
-        height: 400px;
+        width: 100px;
+        height: 100px;
 
         left: 3px;
         top: 50px;
 
         opacity: 75%;
       }
+
+      .button {
+        position: absolute;
+        z-index: 999;
+        width: 100px;
+        height: 100px;
+      }
     </style>
   </head>
-  <body></body>
+  <body>
+    <button class="button" id="button">helo</button>
+  </body>
 </html>

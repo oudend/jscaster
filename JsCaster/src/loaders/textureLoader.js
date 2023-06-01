@@ -63,8 +63,8 @@ class TextureLoader {
     this.loaded = false;
   }
 
-  #onload(image) {
-    this.textureImage = image;
+  #onload(data) {
+    this.textureImage = data.image;
 
     this.loaded = true;
   }

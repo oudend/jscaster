@@ -18,13 +18,13 @@ class Level {
    * @param {number} height - Height of the level in 2d space.
    * @param {number} [ceilingHeight=100] - Height of the level in "3d" space.
    */
-  constructor(width, height, ceilingHeight = 100) {
+  constructor(width, height, ceilingHeight = 100, cellSize = 100) {
     this.width = width;
     this.height = height;
     this.ceilingHeight = ceilingHeight;
 
     this.grid = [];
-    this.cellSize = 10;
+    this.cellSize = cellSize;
 
     this.#createGrid();
 
@@ -34,20 +34,16 @@ class Level {
         new Vector2(width, 0),
         new Vector2(width, height),
         new Vector2(0, height),
-        //new LineSegment(new Vector2(0, height), new Vector2(0, 0)),
       ],
-      ceilingHeight //this.height
+      ceilingHeight
     );
 
     this.polygons = [];
     this.sprites = [];
     this.lights = [];
+    this.debug = [];
 
     this.addPolygon(this.walls);
-
-    // this.#addPolygonToGrid(this.walls, 0);
-
-    //console.log(this.getClosestLineSegments(new Vector2(0, 0), 1000), "hello");
 
     this.floorTextureScale = new Vector2(1, 1);
     this.ceilingTextureScale = new Vector2(1, 1);
@@ -68,46 +64,23 @@ class Level {
     }
   }
 
-  // // const x = Math.floor(position.x / this.cellSize);
-  // // const y = Math.floor(position.y / this.cellSize);
-  // // this.
-
-  //? add all the lineSegments in a polygon to the grid using the private function #addLineSegment
   #addPolygonToGrid(polygon) {
-    //, polygonIndex) {
     for (let i = 0; i < polygon.segments.length; i++) {
-      this.#addLineSegmentToGrid(polygon.segments[i], polygon); //i, polygonIndex);
+      this.#addLineSegmentToGrid(polygon.segments[i], polygon);
     }
   }
 
-  //? add all intersecting points to the grid of the line segment as an accessor to the line segment.
   #addLineSegmentToGrid(lineSegment, polygon) {
-    const centerTile = this.tileVector(lineSegment.center);
-    this.grid[centerTile.x][centerTile.y].polygons.push(polygon);
-    this.grid[centerTile.x][centerTile.y].lineSegments.push(lineSegment);
+    this.traverseGrid(
+      lineSegment.start,
+      lineSegment.end,
+      (tile, gridIntersection, worldTile) => {
+        this.grid[tile.x][tile.y].polygons.push(polygon);
+        this.grid[tile.x][tile.y].lineSegments.push(lineSegment);
 
-    this.traverseGrid(lineSegment.start, lineSegment.end, (tile) => {
-      this.grid[tile.x][tile.y].polygons.push(polygon);
-      this.grid[tile.x][tile.y].lineSegments.push(lineSegment);
-      //? this.grid[tile.x][tile.y].lineSegments.push({lineSegment: lineSegment, polygonIndex: polygonIndex});
-    });
-  }
-
-  #getHelpers(position, direction) {
-    const tile = Math.floor(position / this.cellSize);
-
-    var dTile = 0;
-    var dt = 0;
-
-    if (direction > 0) {
-      dTile = 1;
-      dt = ((tile + 1) * this.cellSize - position) / direction;
-    } else {
-      dTile = -1;
-      dt = (tile * this.cellSize - position) / direction;
-    }
-
-    return [dt, (dTile * this.cellSize) / direction];
+        this.debug.push(gridIntersection, worldTile);
+      }
+    );
   }
 
   /**
@@ -118,48 +91,102 @@ class Level {
    * @param {function(tile): tile} callback - Function that gets called for each grid cell that is intersected with the path.
    */
   traverseGrid(start, end, callback) {
-    //! make sure dx and dy are normalized or whatever they need to be.
+    var current = new Vector2(start.x, start.y);
 
-    const tile = this.tileVector(start);
-    const endTile = this.tileVector(end);
+    var tile = this.tileVector(start);
+    var endTile = this.tileVector(end);
 
-    const direction = Vector2.subtract(end, start);
+    const direction = Vector2.subtract(end, start)
+      .normalize()
+      .multiply(new Vector2(1, 1));
 
-    var [dtX, ddtX] = this.#getHelpers(start.x, direction.x);
-    var [dtY, ddtY] = this.#getHelpers(start.y, direction.y);
+    const tileOffsetX =
+      (direction.x > 0 ? 1 : 0) -
+      (direction.degrees < 270 && direction.degrees > 90 ? 0 : 1);
+    const tileOffsetY =
+      (direction.y > 0 ? 1 : 0) -
+      (direction.degrees < 360 && direction.degrees > 180 ? 0 : 1);
+    var dtX = 0;
+    var dtY = 0;
 
-    callback(tile);
+    if (
+      callback(
+        Vector2.subtract(tile, new Vector2(1, 1)),
+        current,
+        new Vector2((tile.x - 1) * this.cellSize, (tile.y - 1) * this.cellSize)
+      )
+    )
+      return;
 
-    const dirSignX = direction.x > 0 ? 1 : -1;
-    const dirSignY = direction.y > 0 ? 1 : -1;
+    var dirSignX = direction.x > 0 ? 1 : -1;
+    var dirSignY = direction.y > 0 ? 1 : -1;
 
-    if (direction.x === 0) dtX = Infinity;
-    if (direction.y === 0) dtY = Infinity;
-
-    if (direction.x ** 2 + direction.y ** 2 === 0) return;
+    var t = 0;
+    var maxT = Vector2.distance(start, end);
 
     while (true) {
-      if (dtX < dtY) {
-        tile.x += dirSignX;
-        dtY -= dtX;
-        dtX = ddtX; //(dirSignX * this.cellSize) / direction.x;
-      } else {
-        tile.y += dirSignY;
-        dtX -= dtY;
-        dtY = ddtY; //(dirSignY * this.cellSize) / direction.y;
+      dtX =
+        ((tile.x - 1 + tileOffsetX) * this.cellSize -
+          current.x +
+          (direction.x > 0 ? 1 : -1) * (this.cellSize / 2)) /
+        direction.x;
+      dtY =
+        ((tile.y - 1 + tileOffsetY) * this.cellSize -
+          current.y +
+          (direction.y > 0 ? 1 : -1) * (this.cellSize / 2)) /
+        direction.y;
+
+      if (direction.x == 0) {
+        dirSignX = 0;
+        dtX = Infinity;
       }
 
+      if (direction.y == 0) {
+        dirSignY = 0;
+        dtY = Infinity;
+      }
+
+      if (dtX < dtY) {
+        t += dtX;
+        tile.x += dirSignX;
+      } else if (dtY < dtX) {
+        t += dtY;
+        tile.y += dirSignY;
+      } else {
+        t += dtY + dtX;
+
+        tile.x += dirSignX;
+        tile.y += dirSignY;
+      }
+
+      if (t >= maxT) return;
+
+      current = new Vector2(
+        start.x + direction.x * t,
+        start.y + direction.y * t
+      );
+
       if (
-        tile.x < 0 ||
-        tile.x > Math.floor(this.width / this.cellSize) ||
-        tile.y < 0 ||
-        tile.y > Math.floor(this.height / this.cellSize)
+        tile.x < 1 ||
+        tile.x > Math.floor(this.width / this.cellSize) + 1 ||
+        tile.y < 1 ||
+        tile.y > Math.floor(this.height / this.cellSize) + 1
       )
-        break;
+        return;
 
-      if (callback(tile)) break;
+      if (
+        callback(
+          Vector2.subtract(tile, new Vector2(1, 1)),
+          current,
+          new Vector2(
+            (tile.x - 1) * this.cellSize,
+            (tile.y - 1) * this.cellSize
+          )
+        )
+      )
+        return;
 
-      if (Vector2.compare(tile, endTile)) break;
+      if (tile.x == endTile.x && tile.y == endTile.y) return;
     }
   }
 
@@ -171,8 +198,8 @@ class Level {
    */
   tileVector(position) {
     return new Vector2(
-      Math.floor(position.x / this.cellSize),
-      Math.floor(position.y / this.cellSize)
+      Math.floor((position.x + this.cellSize / 2) / this.cellSize) + 1,
+      Math.floor((position.y + this.cellSize / 2) / this.cellSize) + 1
     );
   }
 
@@ -183,8 +210,6 @@ class Level {
    * @type {boolean}
    */
   get texturesLoaded() {
-    // console.log("hello");
-
     for (var polygon of this.polygons) {
       if (!polygon.texture) continue;
       if (!polygon.texture.loaded) return false;

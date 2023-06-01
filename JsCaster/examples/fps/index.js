@@ -8,13 +8,8 @@ import {
   WebglRenderer,
   Ray,
 } from "../../src/jscaster.js";
-
-//!documentation build --document-exported ./JsCaster/src/jscaster.js -f html -o ./JsCaster/docs
-
 import { degrees_to_radians } from "../../src/utils.js";
-
-import { mainmenuLevel } from "../levels/simpleShooterLevel.js";
-
+import { exampleLevel } from "../levels/exampleLevel.js";
 import Stats from "../../lib/stats.module.js";
 
 const renderPass = /*glsl*/ `
@@ -22,58 +17,79 @@ return vec4( (vec3(min(1., 500./distance))) * color.rgb, color.a);
 `;
 
 const camera = new Camera(new Vector2(1, 1), 40, 120, 100000);
-
-const renderer = new WebglRenderer(800, 800, camera, renderPass);
-
-//renderer.canvas.style.width = `${200}px`;
-//renderer.canvas.style.height = `${300}px`;
+const renderer = new WebglRenderer(300, 300, camera, renderPass);
 
 renderer.dom = document.body;
-
-// renderer.canvas.height = 500;
 renderer.canvas.style.width = `${window.innerWidth}px`;
 renderer.canvas.style.height = `${window.innerHeight}px`;
 
-//const levelHelper = new LevelHelper(mainmenuLevel, true);
-const rendererHelper = new RendererHelper(renderer, mainmenuLevel, true);
-const levelHelper = rendererHelper.levelHelper;
+const button = document.getElementById("button");
 
-levelHelper.canvas.style.width = `${300}px`;
-levelHelper.canvas.style.height = `${300}px`;
+button.requestPointerLock =
+  button.requestPointerLock ||
+  button.mozRequestPointerLock ||
+  button.webkitRequestPointerLock;
 
-document.body.appendChild(levelHelper.canvas);
+// button.onClick = addEventListener(
+//   "click",
+//   function (event) {
+//     button.requestPointerLock();
+//   },
+//   false
+// );
 
-renderer.render(mainmenuLevel);
+button.onclick = function () {
+  button.requestPointerLock();
+};
 
-// levelHelper.render();
-rendererHelper.render();
+var previousCursorPositionX = 0;
+var previousCursorPositionY = 0;
 
-rendererHelper.canvas.classList.add("minimap");
+document.addEventListener(
+  "mousemove",
+  (event) => {
+    camera.angle += event.movementX / 10;
+    camera.verticalAngle -= event.movementY / 5;
+
+    camera.angle = camera.angle % 360;
+
+    if (camera.verticalAngle > 160) {
+      camera.verticalAngle = 160;
+    }
+    if (camera.verticalAngle < -160) {
+      camera.verticalAngle = -160;
+    }
+
+    previousCursorPositionX = event.clientXdw;
+    previousCursorPositionY = event.clientY;
+
+    //? clamp angles
+  },
+  false
+);
+
+// Ask the browser to release the pointer
+document.exitPointerLock =
+  document.exitPointerLock ||
+  document.mozExitPointerLock ||
+  document.webkitExitPointerLock;
+//? document.exitPointerLock();
+
+var keys = {};
+
+var speed = 0;
 
 var stats = new Stats();
 stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
 document.body.appendChild(stats.dom);
 
-var turnSpeed = 2;
-
-var keys = {};
-
-//var count = 0;
-
-var speed = 0;
-
 requestAnimationFrame(animate);
 
 function animate() {
   stats.begin();
-  renderer.render(mainmenuLevel);
-
+  renderer.render(exampleLevel);
   moveCamera();
-  rendererHelper.render();
   stats.end();
-
-  //exampleLevel.floorTextureOffset.add(new Vector2(1, 1));
-  //exampleLevel.ceilingTextureOffset.subtract(new Vector2(1, 1));
 
   requestAnimationFrame(animate);
 }
@@ -113,54 +129,31 @@ function moveCamera() {
           )
         );
         break;
-      case "f":
-        break;
-      case " ":
-        const rayData = Ray.castRay3(
-          mainmenuLevel,
-          new Ray(camera.position, camera.angle, 1000),
-          camera.angle,
-          undefined,
-          undefined,
-          false,
-          true
-        );
-        console.log(rayData);
-        break;
-      case "ArrowRight":
-        camera.angle += turnSpeed;
-        break;
-      case "ArrowLeft":
-        camera.angle -= turnSpeed;
-        if (camera.angle < 0) camera.angle = 359;
-        break;
-      case "ArrowUp":
-        camera.verticalAngle += turnSpeed * 4;
-        break;
-      case "ArrowDown":
-        camera.verticalAngle -= turnSpeed * 4;
-        break;
-      case "g":
-        renderer.floorOffset -= 2;
-        break;
-      case "t":
-        renderer.floorOffset += 2;
-        break;
-      case "h":
-        camera.fov -= 1;
-        renderer.recalculateDistanceToProjectionPlane();
-        break;
-      case "y":
-        camera.fov += 1;
-        renderer.recalculateDistanceToProjectionPlane();
-        break;
-      case "0":
-        mainmenuLevel.sprites[0].textureLoader.setTextureLoader(0);
-        break;
-      case "1":
-        mainmenuLevel.sprites[0].textureLoader.setTextureLoader(1);
-        break;
-      //! won't work correctly because things like directionToProjectionPLane in the renderer would need to be recalculated
+      // case " ":
+      //   const rayData = Ray.castRay3(
+      //     exampleLevel,
+      //     new Ray(camera.position, camera.angle, 1000),
+      //     camera.angle,
+      //     undefined,
+      //     undefined,
+      //     false,
+      //     true
+      //   );
+      //   console.log(rayData);
+      //   break;
+      // case "ArrowRight":
+      //   camera.angle += turnSpeed;
+      //   break;
+      // case "ArrowLeft":
+      //   camera.angle -= turnSpeed;
+      //   if (camera.angle < 0) camera.angle = 359;
+      //   break;
+      // case "ArrowUp":
+      //   camera.verticalAngle += turnSpeed * 4;
+      //   break;
+      // case "ArrowDown":
+      //   camera.verticalAngle -= turnSpeed * 4;
+      //   break;
     }
 
     camera.fov = Math.min(Math.max(camera.fov, 10), 170);

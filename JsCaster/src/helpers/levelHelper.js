@@ -98,6 +98,8 @@ class LevelHelper {
    */
   render() {
     this.ctx.fillStyle = "black";
+    this.ctx.lineWidth = 6;
+    this.ctx.strokeStyle = "black";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     for (var i = 0; i < this.level.polygons.length; i++) {
@@ -111,6 +113,24 @@ class LevelHelper {
 
       this.#drawLight(light);
     }
+
+    //this.ctx.moveTo(polygon.points[0].x, polygon.points[0].y);
+    this.ctx.beginPath();
+
+    for (let x = 0; x < Math.floor(this.level.width / this.level.cellSize) + 1; x++) {
+      this.ctx.moveTo(x * this.level.cellSize - this.level.cellSize/2, 0);
+      this.ctx.lineTo(x * this.level.cellSize - this.level.cellSize/2,this.level.height);
+    }
+
+    for (let y = 0; y < Math.floor(this.level.height / this.level.cellSize) + 1; y++) {
+      this.ctx.moveTo(0, y * this.level.cellSize - this.level.cellSize/2);
+      this.ctx.lineTo(this.level.width, y * this.level.cellSize - this.level.cellSize/2);
+    }
+
+    
+
+    this.ctx.closePath();
+    this.ctx.stroke();
   }
 } //should be able to render a level to a canvas
 

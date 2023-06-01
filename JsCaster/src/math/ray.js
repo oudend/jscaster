@@ -153,60 +153,95 @@ class Ray {
 
     var closestHitDistance = Infinity;
 
-    var direction = Vector2.fromAngle(ray.angle);
-    // console.log(level.grid);
+    // var direction = Vector2.fromAngle(ray.angle);
+    // // console.log(level.grid);
 
-    direction = new Vector2(ray.lineSegment.dx, ray.lineSegment.dy).divide(
-      ray.lineSegment.length
-    );
+    // direction = new Vector2(ray.lineSegment.dx, ray.lineSegment.dy).divide(
+    //   ray.lineSegment.length
+    // );
 
-    level.traverseGrid(ray.origin, ray.lineSegment.end, (tile) => {
-      const cell = level.grid[tile.x][tile.y];
+    const debugTs = [];
 
-      const lineSegments = cell.lineSegments;
+    var step = 0;
 
-      if (lineSegments.length === 0) return false;
+    var moveStep = false;
 
-      var intersection = false;
+    level.traverseGrid(
+      ray.origin,
+      ray.lineSegment.end,
+      (tile, debugT, debugC) => {
+        const cell = level.grid[tile.x][tile.y];
 
-      Ray.rayCollides2(
-        lineSegments,
-        ray,
-        (intersectionInformation, lineSegment, i) => {
-          const polygon = cell.polygons[i];
+        const lineSegments = cell.lineSegments;
 
-          intersection = true;
+        debugTs.push(debugT, debugC);
 
-          const distance = Vector2.distance(
-            intersectionInformation.point,
-            ray.origin
-          );
+        if (lineSegments.length === 0) return false;
 
-          const lineSegmentData = {
-            polygon: polygon,
-            lineSegment: lineSegment,
-            intersection: intersectionInformation,
-            distance: distance,
-          };
+        var intersection = false;
 
-          if (polygonCallback) polygonCallback(lineSegmentData);
+        //? check the distance and select the actual closest thing
 
-          data.polygon.considered.push(lineSegmentData);
+        Ray.rayCollides2(
+          lineSegments,
+          ray,
+          (intersectionInformation, lineSegment, i) => {
+            const polygon = cell.polygons[i];
 
-          if (distance > closestHitDistance) return;
+            intersection = true;
 
-          data.polygon.closest = lineSegmentData;
+            const distance = Vector2.distance(
+              intersectionInformation.point,
+              ray.origin
+            );
 
-          closestHitDistance = distance;
+            const lineSegmentData = {
+              polygon: polygon,
+              lineSegment: lineSegment,
+              intersection: intersectionInformation,
+              distance: distance,
+            };
+
+            debugTs.push(intersectionInformation.point, debugC);
+
+            if (polygonCallback) polygonCallback(lineSegmentData, debugTs);
+
+            data.polygon.considered.push(lineSegmentData);
+
+            if (distance > closestHitDistance) return;
+
+            data.polygon.closest = lineSegmentData;
+
+            closestHitDistance = distance;
+          }
+        );
+
+        if (closestHitDistance !== Infinity) {
+          const intersectionPointTile = level
+            .tileVector(data.polygon.closest.intersection.point)
+            .subtract(1);
+
+          //? if the intersection point isn't in the same tile then keep going.
+
+          if (
+            intersectionPointTile.x !== tile.x ||
+            intersectionPointTile.y !== tile.y
+          )
+            return false;
         }
-      );
 
-      if (intersection && limited) {
-        return true;
+        //? temp
+        // // if (intersection) moveStep = true;
+
+        // // if (moveStep) step++;
+
+        if (intersection && limited) {
+          return true;
+        }
+
+        return false;
       }
-
-      return false;
-    });
+    );
 
     data.closest = data.polygon.closest;
 

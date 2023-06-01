@@ -43,89 +43,121 @@ class RendererHelper {
   render() {
     this.ctx.drawImage(this.levelHelper.canvas, 0, 0);
 
-    this.ctx.fillStyle = "orange";
+    // // this.ctx.fillStyle = "orange";
 
-    //Draw Camera
-    this.ctx.beginPath();
-    this.ctx.arc(
-      this.camera.position.x,
-      this.camera.position.y,
-      5,
-      0,
-      2 * Math.PI
-    );
-    this.ctx.fill();
+    // // //Draw Camera
+    // // this.ctx.beginPath();
+    // // this.ctx.arc(
+    // //   this.camera.position.x,
+    // //   this.camera.position.y,w
+    // //   5,
+    // //   0,
+    // //   2 * Math.PI
+    // // );
+    // // this.ctx.fill();
 
-    const cameraRadians = this.camera.angle * (Math.PI / 180);
+    // // const cameraRadians = this.camera.angle * (Math.PI / 180);
 
-    const cameraLeftBoundaryRadians = //TODO
-      (this.camera.angle - this.camera.fov / 2) * (Math.PI / 180);
+    // // const cameraLeftBoundaryRadians = //TODO
+    // //   (this.camera.angle - this.camera.fov / 2) * (Math.PI / 180);
 
-    const cameraRightBoundaryRadians =
-      (this.camera.angle + this.camera.fov / 2) * (Math.PI / 180);
+    // // const cameraRightBoundaryRadians =
+    // //   (this.camera.angle + this.camera.fov / 2) * (Math.PI / 180);
 
-    const forwardVector = Vector2.multiply(
-      Vector2.fromAngle(cameraRadians),
-      new Vector2(30, 30)
-    );
+    // // const forwardVector = Vector2.multiply(
+    // //   Vector2.fromAngle(cameraRadians),
+    // //   new Vector2(30, 30)
+    // // );
 
-    const leftBoundaryVector = Vector2.multiply(
-      Vector2.fromAngle(cameraLeftBoundaryRadians),
-      new Vector2(this.camera.far, this.camera.far)
-    );
+    // // const leftBoundaryVector = Vector2.multiply(
+    // //   Vector2.fromAngle(cameraLeftBoundaryRadians),
+    // //   new Vector2(this.camera.far, this.camera.far)
+    // // );
 
-    const rightBoundaryVector = Vector2.multiply(
-      Vector2.fromAngle(cameraRightBoundaryRadians),
-      new Vector2(this.camera.far, this.camera.far)
-    );
+    // // const rightBoundaryVector = Vector2.multiply(
+    // //   Vector2.fromAngle(cameraRightBoundaryRadians),
+    // //   new Vector2(this.camera.far, this.camera.far)
+    // // );
 
-    //console.log(cameraRightBoundaryRadians)
+    // // const finalVector = Vector2.add(this.camera.position, forwardVector);
+    // // const finalVector2 = Vector2.add(this.camera.position, leftBoundaryVector);
+    // // const finalVector3 = Vector2.add(this.camera.position, rightBoundaryVector);
 
-    // console.log(radians);
-    // return;
+    // // this.ctx.strokeStyle = "red";
+    // // this.ctx.lineWidth = 1;
+    // // this.ctx.beginPath();
+    // // this.ctx.moveTo(this.camera.position.x, this.camera.position.y);
+    // // this.ctx.lineTo(finalVector.x, finalVector.y);
+    // // this.ctx.stroke();
 
-    const finalVector = Vector2.add(this.camera.position, forwardVector);
-    const finalVector2 = Vector2.add(this.camera.position, leftBoundaryVector);
-    const finalVector3 = Vector2.add(this.camera.position, rightBoundaryVector);
+    // // this.ctx.strokeStyle = "green";
+    // // this.ctx.beginPath();
+    // // this.ctx.moveTo(this.camera.position.x, this.camera.position.y);
+    // // this.ctx.lineTo(finalVector2.x, finalVector2.y);
 
-    this.ctx.strokeStyle = "red";
-    this.ctx.lineWidth = 1;
-    this.ctx.beginPath();
-    this.ctx.moveTo(this.camera.position.x, this.camera.position.y);
-    this.ctx.lineTo(finalVector.x, finalVector.y);
-    this.ctx.stroke();
+    // // this.ctx.moveTo(this.camera.position.x, this.camera.position.y);
+    // // this.ctx.lineTo(finalVector3.x, finalVector3.y);
+    // // this.ctx.stroke();
 
-    this.ctx.strokeStyle = "green";
-    this.ctx.beginPath();
-    this.ctx.moveTo(this.camera.position.x, this.camera.position.y);
-    this.ctx.lineTo(finalVector2.x, finalVector2.y);
-
-    this.ctx.moveTo(this.camera.position.x, this.camera.position.y);
-    this.ctx.lineTo(finalVector3.x, finalVector3.y);
-    this.ctx.stroke();
-
-    //console.log(finalVector3)
-
-    //console.log(facingVector);
     //Draw Camera
 
     if (!this.renderer.rays) return;
 
     this.ctx.strokeStyle = "white";
     this.ctx.lineWidth = 1;
+
+    this.ctx.beginPath();
     for (var i = 0; i < this.renderer.rays.length; i++) {
       const ray = this.renderer.rays[i];
 
       const start = ray.ray.lineSegment.start;
       var end = ray.ray.lineSegment.end;
 
-      if (ray.intersects) end = ray.hit;
+      if (ray.intersects) {
+        end = ray.hit;
 
-      this.ctx.beginPath();
+        this.ctx.fillStyle = "rgba(0, 255, 0, 0.6)";
+        this.ctx.moveTo(end.x, end.y);
+        this.ctx.arc(end.x, end.y, 6, 0, 2 * Math.PI, false);
+      }
+
       this.ctx.moveTo(start.x, start.y);
       this.ctx.lineTo(end.x, end.y);
-      this.ctx.stroke();
     }
+
+    this.ctx.closePath();
+    this.ctx.stroke();
+
+    this.ctx.fillStyle = "red";
+
+    //console.log(this.camera.intersectionPoints[0])
+
+    //this.ctx.beginPath();
+
+    //!const points = [...this.level.debug, ...this.camera.intersectionPoints];
+
+    return;
+
+    const points = this.camera.intersectionPoints;
+
+    //return;
+
+    for (var i = 0; i < points.length; i++) {
+      const point = points[i];
+      this.ctx.fillStyle = "red";
+
+      if (i % 2 == 1) this.ctx.fillStyle = "blue";
+      //console.log(point);
+      //debugger;
+      this.ctx.beginPath();
+      this.ctx.arc(point.x, point.y, 10, 0, 2 * Math.PI, false);
+      this.ctx.closePath();
+      this.ctx.fill();
+    }
+
+    // this.ctx.arc(this.camera.intersectionPoints[0].x, this.camera.intersectionPoints[0].y, 100, 0, 2 * Math.PI, false);
+    // this.ctx.fill();
+    //this.ctx.closePath();
 
     // const start = this.camera.angle - this.camera.fov / 2;
     // const end = this.camera.angle + this.camera.fov / 2;

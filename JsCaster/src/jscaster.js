@@ -12,6 +12,7 @@ export { LineSegment } from "../src/primitives/lineSegment.js";
 export { Polygon } from "./primitives/polygon.js";
 export { Sprite } from "../src/primitives/sprite.js";
 export { Texture } from "../src/primitives/texture.js";
+export { TextureAtlas } from "../src/primitives/textureAtlas.js";
 export { CanvasRenderer } from "./renderers/canvasRenderer.js";
 export { WebglRenderer } from "../src/renderers/webglRenderer.js";
 export { VERSION } from "./constants.js";
