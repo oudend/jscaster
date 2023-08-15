@@ -14,11 +14,11 @@ import {
 
 const mainmenuLevel = new Level(1000, 1000, 100);
 
-const defaultTextureLoader = new TextureLoader("../../assets/stargr1.png");
+const defaultTextureLoader = new TextureLoader("../../assets/STARGR1.png");
 
 const floorTextureLoader = new TextureLoader("../../assets/floor2.png");
 
-var backgroundTextureLoader = new TextureLoader("../../assets/gray1.png");
+var backgroundTextureLoader = new TextureLoader("../../assets/GRAY1.png");
 
 var defaultMaterial = new BasicMaterial(
   new Color(255, 0, 50),

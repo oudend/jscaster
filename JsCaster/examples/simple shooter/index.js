@@ -269,6 +269,8 @@ stats.showPanel(0);
 document.body.appendChild(stats.dom);
 
 function animate() {
+  if (run) requestAnimationFrame(animate);
+
   stats.begin();
   moveCamera();
   renderer.render();
@@ -286,8 +288,6 @@ function animate() {
   if (playerHealth <= 0) {
     restart();
   }
-
-  if (run) requestAnimationFrame(animate);
 }
 
 function restart() {
@@ -387,7 +387,17 @@ function detectCollision(level, camera, boxSize) {
       true
     );
 
-    if (raycast.object !== undefined) return true;
+    const data = Ray.castRay3(
+      mainmenuLevel,
+      Ray.fromLineSegment(lineSegment),
+      camera.angle,
+      undefined,
+      undefined,
+      true,
+      true
+    );
+
+    if (data.polygon.closest.polygon !== undefined) return true;
   }
 
   return false;

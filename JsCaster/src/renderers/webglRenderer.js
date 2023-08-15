@@ -173,6 +173,8 @@ class WebglRenderer {
     //console.log("loading texture for level: ", level);
     this.resetTextures();
 
+    console.log("loading textures");
+
     for (let texture of level.textures) {
       imageToTexture(
         this.gl,
@@ -588,15 +590,15 @@ class WebglRenderer {
 
     //this.frameImage.src = this.canvas.toDataURL("image/png");
 
-    this.gl.readPixels(
-      0,
-      0,
-      this.width,
-      this.height,
-      this.gl.RGBA,
-      this.gl.UNSIGNED_BYTE,
-      this.pixels
-    );
+    // // this.gl.readPixels(
+    // //   0,
+    // //   0,
+    // //   this.width,
+    // //   this.height,
+    // //   this.gl.RGBA,
+    // //   this.gl.UNSIGNED_BYTE,
+    // //   this.pixels
+    // // );
     //console.log(this.canvas.toDataURL("image/png"));
 
     this.rays = rays;
