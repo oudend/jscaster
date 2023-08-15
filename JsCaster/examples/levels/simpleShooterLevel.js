@@ -7,29 +7,55 @@ import {
   DirectionalLight,
   Color,
   Sprite,
+  BasicMaterial,
+  TextureAtlas,
+  TextureAtlasLoader,
 } from "../../src/jscaster.js";
 
 const mainmenuLevel = new Level(1000, 1000, 100);
 
-const defaultTextureLoader = new TextureLoader(
-  "../../assets/bricks2.jpg",
-  false,
+const defaultTextureLoader = new TextureLoader("../../assets/stargr1.png");
+
+const floorTextureLoader = new TextureLoader("../../assets/floor2.png");
+
+var backgroundTextureLoader = new TextureLoader("../../assets/gray1.png");
+
+var defaultMaterial = new BasicMaterial(
+  new Color(255, 0, 50),
+  defaultTextureLoader,
+  new Vector2(0.3, 1),
+  undefined,
   true,
-  true,
-  "repeat",
-  new Vector2(0.3, 1)
+  true
 );
 
-var backgroundTextureLoader = new TextureLoader(
-  "../../assets/bricks5.jpg",
-  false,
-  true,
-  false,
-  "repeat",
-  new Vector2(0.25, 1.2)
+var floorMaterial = new BasicMaterial(
+  new Color(255, 0, 50),
+  floorTextureLoader,
+  new Vector2(0.5, 0.5),
+  undefined
 );
 
-mainmenuLevel.walls.textureLoader = backgroundTextureLoader;
+console.log(defaultMaterial, mainmenuLevel);
+console.log(mainmenuLevel);
+
+var backgroundMaterial = new BasicMaterial(
+  new Color(255, 0, 50),
+  backgroundTextureLoader,
+  new Vector2(0.16, 1),
+  undefined,
+  true,
+  false
+);
+
+//! the previous material does not get replaced and is causing bug
+//! this is somehow fucking up the material properties or something because floor and ceiling are not assigned to this material originally
+mainmenuLevel.walls.setMaterial(backgroundMaterial);
+
+mainmenuLevel.setFloorMaterial(floorMaterial);
+mainmenuLevel.setCeilingMaterial(floorMaterial);
+
+//mainmenuLevel.walls.textureLoader = backgroundTextureLoader;
 
 // const secondaryTextureLoader = new TextureLoader(
 //   "../../assets/bricks.jpg",
@@ -40,11 +66,11 @@ mainmenuLevel.walls.textureLoader = backgroundTextureLoader;
 //   new Vector2(1, 1)
 // );
 
-mainmenuLevel.setFloorTexture(
-  "../../assets/bricks.jpg",
-  new Vector2(1, 1),
-  new Vector2(0, 0)
-);
+// mainmenuLevel.setFloorTexture(
+//   "../../assets/bricks.jpg",
+//   new Vector2(1, 1),
+//   new Vector2(0, 0)
+// );
 // mainmenuLevel.setCeilingTexture("../../assets/bricks.jpg", new Vector2(1, 1));
 
 console.log(mainmenuLevel.sprites);
@@ -52,33 +78,29 @@ console.log(mainmenuLevel.sprites);
 mainmenuLevel.addPolygon(
   new Polygon(
     [new Vector2(100, 500), new Vector2(10, 800), new Vector2(400, 600)],
-    100
-  ).setTextureLoader(defaultTextureLoader)
+    100,
+    defaultMaterial
+  )
 );
 
 mainmenuLevel.addPolygon(
   new Polygon(
     [new Vector2(800, 500), new Vector2(610, 800), new Vector2(600, 500)],
-    100
-  ).setTextureLoader(defaultTextureLoader)
-);
-
-mainmenuLevel.addPolygon(
-  Polygon.circle(new Vector2(100, 200), 50, 15, 100).setTextureLoader(
-    defaultTextureLoader
+    100,
+    defaultMaterial
   )
 );
 
 mainmenuLevel.addPolygon(
-  Polygon.circle(new Vector2(600, 200), 50, 15, 100).setTextureLoader(
-    defaultTextureLoader
-  )
+  Polygon.circle(new Vector2(100, 200), 50, 15, 100, defaultMaterial)
 );
 
 mainmenuLevel.addPolygon(
-  Polygon.circle(new Vector2(400, 500), 60, 15, 100).setTextureLoader(
-    defaultTextureLoader
-  )
+  Polygon.circle(new Vector2(600, 200), 50, 15, 100, defaultMaterial)
+);
+
+mainmenuLevel.addPolygon(
+  Polygon.circle(new Vector2(400, 500), 60, 15, 100, defaultMaterial)
 );
 
 // mainmenuLevel.addPolygon(

@@ -36,6 +36,7 @@ class SimpleEnemy {
     };
   }
 
+  //TODO: add a loop parameter
   startAnimation(name, cancelCurrent = true) {
     if (!cancelCurrent && this.animationRunning) return;
 
@@ -50,9 +51,14 @@ class SimpleEnemy {
 
     this.animations[name].running = true;
     this.animations[name].current = Date.now();
-    this.sprite.textureLoader.setTextureLoader(
-      this.animations[name].timings[0].animationIndex
+    this.sprite.material.setCrop(
+      this.sprite.material.textureLoader.crops[
+        this.animations[name].timings[0].animationIndex
+      ]
     );
+    // this.sprite.textureLoader.setTextureLoader(
+    //   this.animations[name].timings[0].animationIndex
+    // );
   }
 
   cancelAnimation() {
@@ -79,7 +85,10 @@ class SimpleEnemy {
         animation.index = 0;
         this.animationRunning = false;
         this.currentAnimation = "";
-        this.sprite.textureLoader.setTextureLoader(timing.animationIndex);
+        //this.sprite.textureLoader.setTextureLoader(timing.animationIndex);
+        this.sprite.material.setCrop(
+          this.sprite.material.textureLoader.crops[timing.animationIndex]
+        );
         if (animation.onFinish) animation.onFinish();
         continue;
       }
@@ -88,9 +97,12 @@ class SimpleEnemy {
 
       animation.index++;
 
-      this.sprite.textureLoader.setTextureLoader(
-        animation.timings[animation.index].animationIndex
+      this.sprite.material.setCrop(
+        this.sprite.material.textureLoader.crops[timing.animationIndex]
       );
+      // this.sprite.textureLoader.setTextureLoader(
+      //   animation.timings[animation.index].animationIndex
+      // );
     }
   }
 

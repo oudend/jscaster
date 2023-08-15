@@ -25,6 +25,8 @@ class Texture {
     this.desiredWidth = width;
     this.desiredHeight = height;
 
+    //this.uuid = uuidv4();
+
     this.onload = onload;
 
     this.repeat = repeat;
@@ -35,7 +37,7 @@ class Texture {
     this.image.crossOrigin = "anonymous";
     this.image.src = this.src;
     this.canvas = document.createElement("canvas");
-    this.ctx = this.canvas.getContext("2d");
+    this.ctx = this.canvas.getContext("2d", { willReadFrequently: true });
     this.image.addEventListener("load", this.#onload.bind(this));
 
     this.loaded = false;
@@ -54,7 +56,7 @@ class Texture {
     this.ctx.drawImage(this.image, 0, 0, this.width, this.height);
     this.image.style.display = "none";
 
-    var imagedata = this.ctx.getImageData(0, 0, this.width, this.height);
+    //var imagedata = this.ctx.getImageData(0, 0, this.width, this.height);
 
     this.loaded = true;
     // const img = imagedata_to_image(imagedata);
@@ -70,10 +72,11 @@ class Texture {
 
     this.imagedata = this.ctx.getImageData(0, 0, this.width, this.height);
 
-    this.image = imagedata_to_image(this.imagedata);
+    //TODO: mkae sure this is not necessary
+    // this.image = imagedata_to_image(this.imagedata);
 
     if (this.onload)
-      this.onload({ imagedata: this.imagedata, image: this.image });
+      this.onload({ imagedata: this.imagedata, canvas: this.canvas }); //, image: this.image });
   }
 }
 

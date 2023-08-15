@@ -16,11 +16,13 @@ class RendererHelper {
    * @param {*} level - The level to debug.
    * @param {*} autoReloadTextures - Whether to automatically reload when textures get loaded.
    */
-  constructor(renderer, level, autoReloadTextures) {
+  constructor(renderer, level, autoReloadTextures, debugGrid) {
     this.renderer = renderer;
 
     this.camera = this.renderer.camera;
     this.level = level;
+
+    this.debugGrid = debugGrid;
 
     this.levelHelper = new LevelHelper(this.level, autoReloadTextures);
 
@@ -43,64 +45,6 @@ class RendererHelper {
   render() {
     this.ctx.drawImage(this.levelHelper.canvas, 0, 0);
 
-    // // this.ctx.fillStyle = "orange";
-
-    // // //Draw Camera
-    // // this.ctx.beginPath();
-    // // this.ctx.arc(
-    // //   this.camera.position.x,
-    // //   this.camera.position.y,w
-    // //   5,
-    // //   0,
-    // //   2 * Math.PI
-    // // );
-    // // this.ctx.fill();
-
-    // // const cameraRadians = this.camera.angle * (Math.PI / 180);
-
-    // // const cameraLeftBoundaryRadians = //TODO
-    // //   (this.camera.angle - this.camera.fov / 2) * (Math.PI / 180);
-
-    // // const cameraRightBoundaryRadians =
-    // //   (this.camera.angle + this.camera.fov / 2) * (Math.PI / 180);
-
-    // // const forwardVector = Vector2.multiply(
-    // //   Vector2.fromAngle(cameraRadians),
-    // //   new Vector2(30, 30)
-    // // );
-
-    // // const leftBoundaryVector = Vector2.multiply(
-    // //   Vector2.fromAngle(cameraLeftBoundaryRadians),
-    // //   new Vector2(this.camera.far, this.camera.far)
-    // // );
-
-    // // const rightBoundaryVector = Vector2.multiply(
-    // //   Vector2.fromAngle(cameraRightBoundaryRadians),
-    // //   new Vector2(this.camera.far, this.camera.far)
-    // // );
-
-    // // const finalVector = Vector2.add(this.camera.position, forwardVector);
-    // // const finalVector2 = Vector2.add(this.camera.position, leftBoundaryVector);
-    // // const finalVector3 = Vector2.add(this.camera.position, rightBoundaryVector);
-
-    // // this.ctx.strokeStyle = "red";
-    // // this.ctx.lineWidth = 1;
-    // // this.ctx.beginPath();
-    // // this.ctx.moveTo(this.camera.position.x, this.camera.position.y);
-    // // this.ctx.lineTo(finalVector.x, finalVector.y);
-    // // this.ctx.stroke();
-
-    // // this.ctx.strokeStyle = "green";
-    // // this.ctx.beginPath();
-    // // this.ctx.moveTo(this.camera.position.x, this.camera.position.y);
-    // // this.ctx.lineTo(finalVector2.x, finalVector2.y);
-
-    // // this.ctx.moveTo(this.camera.position.x, this.camera.position.y);
-    // // this.ctx.lineTo(finalVector3.x, finalVector3.y);
-    // // this.ctx.stroke();
-
-    //Draw Camera
-
     if (!this.renderer.rays) return;
 
     this.ctx.strokeStyle = "white";
@@ -110,8 +54,8 @@ class RendererHelper {
     for (var i = 0; i < this.renderer.rays.length; i++) {
       const ray = this.renderer.rays[i];
 
-      const start = ray.ray.lineSegment.start;
-      var end = ray.ray.lineSegment.end;
+      let start = ray.ray.lineSegment.start;
+      let end = ray.ray.lineSegment.end;
 
       if (ray.intersects) {
         end = ray.hit;
@@ -136,7 +80,7 @@ class RendererHelper {
 
     //!const points = [...this.level.debug, ...this.camera.intersectionPoints];
 
-    return;
+    if (!this.debugGrid) return;
 
     const points = this.camera.intersectionPoints;
 
@@ -155,9 +99,16 @@ class RendererHelper {
       this.ctx.fill();
     }
 
-    // this.ctx.arc(this.camera.intersectionPoints[0].x, this.camera.intersectionPoints[0].y, 100, 0, 2 * Math.PI, false);
+    // this.ctx.arc(
+    //   this.camera.intersectionPoints[0].x,
+    //   this.camera.intersectionPoints[0].y,
+    //   100,
+    //   0,
+    //   2 * Math.PI,
+    //   false
+    // );
     // this.ctx.fill();
-    //this.ctx.closePath();
+    // this.ctx.closePath();
 
     // const start = this.camera.angle - this.camera.fov / 2;
     // const end = this.camera.angle + this.camera.fov / 2;

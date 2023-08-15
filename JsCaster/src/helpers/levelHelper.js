@@ -1,3 +1,7 @@
+import { imagedata_to_image } from "../utils.js";
+import { Texture } from "../primitives/texture.js";
+import { TextureAtlas } from "../primitives/textureAtlas.js";
+
 /**
  * A class for debugging the level with a top down view.
  *
@@ -61,19 +65,24 @@ class LevelHelper {
     this.ctx.fillStyle = polygon.color ?? "red";
     this.ctx.strokeStyle = "black";
 
-    if (polygon.texture && polygon.texture.loaded) {
+    if (polygon.material.texture && polygon.material.textureLoaded) {
+      //imagedata_to_image(polygon.material.texture.textureImage);
+
+      //console.log(polygon.material.data.canvas, polygon.material.texture);
+
       var pattern = this.ctx.createPattern(
-        polygon.texture.textureImage,
+        polygon.material.data.canvas,
         "repeat"
       );
 
       //? make it fit into the polygon
 
       pattern.setTransform({
-        a: (this.level.width / polygon.texture.textureImage.width) * 2,
-        d: this.level.height / polygon.texture.textureImage.height,
+        a: (this.level.width / polygon.material.texture.width) * 2,
+        d: this.level.height / polygon.material.texture.height,
       });
       this.ctx.fillStyle = pattern;
+
       //this.ctx.fill();
     }
 
@@ -117,17 +126,29 @@ class LevelHelper {
     //this.ctx.moveTo(polygon.points[0].x, polygon.points[0].y);
     this.ctx.beginPath();
 
-    for (let x = 0; x < Math.floor(this.level.width / this.level.cellSize) + 1; x++) {
-      this.ctx.moveTo(x * this.level.cellSize - this.level.cellSize/2, 0);
-      this.ctx.lineTo(x * this.level.cellSize - this.level.cellSize/2,this.level.height);
+    for (
+      let x = 0;
+      x < Math.floor(this.level.width / this.level.cellSize) + 1;
+      x++
+    ) {
+      this.ctx.moveTo(x * this.level.cellSize - this.level.cellSize / 2, 0);
+      this.ctx.lineTo(
+        x * this.level.cellSize - this.level.cellSize / 2,
+        this.level.height
+      );
     }
 
-    for (let y = 0; y < Math.floor(this.level.height / this.level.cellSize) + 1; y++) {
-      this.ctx.moveTo(0, y * this.level.cellSize - this.level.cellSize/2);
-      this.ctx.lineTo(this.level.width, y * this.level.cellSize - this.level.cellSize/2);
+    for (
+      let y = 0;
+      y < Math.floor(this.level.height / this.level.cellSize) + 1;
+      y++
+    ) {
+      this.ctx.moveTo(0, y * this.level.cellSize - this.level.cellSize / 2);
+      this.ctx.lineTo(
+        this.level.width,
+        y * this.level.cellSize - this.level.cellSize / 2
+      );
     }
-
-    
 
     this.ctx.closePath();
     this.ctx.stroke();

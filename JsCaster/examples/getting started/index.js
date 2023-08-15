@@ -13,7 +13,7 @@ import {
 
 import { degrees_to_radians } from "../../src/utils.js";
 
-import { mainmenuLevel } from "../levels/simpleShooterLevel.js";
+import { exampleLevel } from "../levels/exampleLevel.js";
 
 import Stats from "../../lib/stats.module.js";
 
@@ -23,7 +23,13 @@ return vec4( (vec3(min(1., 500./distance))) * color.rgb, color.a);
 
 const camera = new Camera(new Vector2(1, 1), 40, 120, 100000);
 
-const renderer = new WebglRenderer(800, 800, camera, renderPass);
+const renderer = new WebglRenderer(100, 100, camera, exampleLevel, renderPass);
+
+// // const rendererTexture = new WebglRenderer(10, 10, camera, exampleLevel);
+
+// // rendererTexture.render();
+
+// // console.log(rendererTexture.frameImage);
 
 //renderer.canvas.style.width = `${200}px`;
 //renderer.canvas.style.height = `${300}px`;
@@ -35,15 +41,15 @@ renderer.canvas.style.width = `${window.innerWidth}px`;
 renderer.canvas.style.height = `${window.innerHeight}px`;
 
 //const levelHelper = new LevelHelper(mainmenuLevel, true);
-const rendererHelper = new RendererHelper(renderer, mainmenuLevel, true);
+const rendererHelper = new RendererHelper(renderer, exampleLevel, true);
 const levelHelper = rendererHelper.levelHelper;
 
-levelHelper.canvas.style.width = `${300}px`;
-levelHelper.canvas.style.height = `${300}px`;
+levelHelper.canvas.style.width = `${100}px`;
+levelHelper.canvas.style.height = `${100}px`;
 
 document.body.appendChild(levelHelper.canvas);
 
-renderer.render(mainmenuLevel);
+renderer.render(exampleLevel);
 
 // levelHelper.render();
 rendererHelper.render();
@@ -65,8 +71,13 @@ var speed = 0;
 requestAnimationFrame(animate);
 
 function animate() {
+  // if (exampleLevel.updateTextures === true) {
+  //   exampleLevel.updateTextures = false;
+  //   renderer.loadLevelTextures(exampleLevel);
+  // }
+
   stats.begin();
-  renderer.render(mainmenuLevel);
+  renderer.render();
 
   moveCamera();
   rendererHelper.render();
@@ -87,6 +98,39 @@ function moveCamera() {
     speed = 2;
 
     switch (key) {
+      case "q":
+        //console.log(renderer.pixels);
+
+        // renderer.gl.texImage2D(
+        //   renderer.gl.TEXTURE_2D,
+        //   0,
+        //   renderer.gl.RGBA,
+        //   100,
+        //   100,
+        //   0,
+        //   renderer.gl.RGBA,
+        //   renderer.gl.UNSIGNED_BYTE,
+        //   renderer.pixels
+        // );
+
+        let pix = new ImageData(
+          renderer.pixels,
+          renderer.width,
+          renderer.height
+        );
+
+        //console.log(pix);
+
+        exampleLevel.debugMaterial.setTexture(pix);
+        break;
+      case "o":
+        exampleLevel.debugMaterial.offset.add(new Vector2(1, 0));
+        exampleLevel.debugMaterial.updateMaterialProperties();
+        break;
+      case "l":
+        exampleLevel.debugMaterial.offset.add(new Vector2(-1, 0));
+        exampleLevel.debugMaterial.updateMaterialProperties();
+        break;
       case "w":
         camera.position.add(
           Vector2.fromAngle(degrees_to_radians(camera.angle)).multiply(speed)
@@ -117,7 +161,7 @@ function moveCamera() {
         break;
       case " ":
         const rayData = Ray.castRay3(
-          mainmenuLevel,
+          exampleLevel,
           new Ray(camera.position, camera.angle, 1000),
           camera.angle,
           undefined,
@@ -154,12 +198,14 @@ function moveCamera() {
         camera.fov += 1;
         renderer.recalculateDistanceToProjectionPlane();
         break;
-      case "0":
-        mainmenuLevel.sprites[0].textureLoader.setTextureLoader(0);
-        break;
-      case "1":
-        mainmenuLevel.sprites[0].textureLoader.setTextureLoader(1);
-        break;
+      case "k":
+        console.log(renderer.loadedTextureCount);
+      // // case "0":
+      // //   exampleLevel.sprites[0].textureLoader.setTextureLoader(0);
+      // //   break;
+      // // case "1":
+      // //   exampleLevel.sprites[0].textureLoader.setTextureLoader(1);
+      // //   break;
       //! won't work correctly because things like directionToProjectionPLane in the renderer would need to be recalculated
     }
 

@@ -80,7 +80,29 @@ function imageToTexture(gl, image, activeTexture) {
   // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
+  // var texture = this.gl.createTexture();
+  //   this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+
   // Upload the image into the texture.
+
+  //   var buf = gl.createBuffer();
+  // var view = new Uint8Array(ArrayBuffer);
+
+  // gl.bindBuffer(gl.PIXEL_UNPACK_BUFFER, buf);
+  // gl.bufferData(gl.PIXEL_UNPACK_BUFFER, view, gl.STATIC_DRAW);
+
+  // gl.texImage2D(
+  //   gl.TEXTURE_2D,
+  //   0,
+  //   gl.RGBA,
+  //   image.width,
+  //   image.height,
+  //   0,
+  //   gl.RGBA,
+  //   gl.UNSIGNED_BYTE,
+  //   image
+  // );
+
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 
   // set the filtering so we don't need mips

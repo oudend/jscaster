@@ -2,6 +2,9 @@ import { Vector2 } from "../math/vector2.js";
 import { LineSegment } from "../primitives/lineSegment.js";
 import { Polygon } from "../primitives/polygon.js";
 import { TextureLoader } from "../loaders/textureLoader.js";
+import { Color } from "../primitives/color.js";
+import { BasicMaterial } from "../materials/basicMaterial.js";
+import { v4 as uuidv4 } from "../../lib/uuid/dist/esm-browser/index.js";
 
 /**
  * Class that represents a level.
@@ -23,8 +26,16 @@ class Level {
     this.height = height;
     this.ceilingHeight = ceilingHeight;
 
+    this.uuid = uuidv4();
+
     this.grid = [];
     this.cellSize = cellSize;
+
+    //! added through materials.
+    this.materials = [];
+    this.materialProperties = [];
+    this.textures = [];
+    this.textureUsers = [];
 
     this.#createGrid();
 
@@ -45,16 +56,154 @@ class Level {
 
     this.addPolygon(this.walls);
 
-    this.floorTextureScale = new Vector2(1, 1);
-    this.ceilingTextureScale = new Vector2(1, 1);
+    const material = new BasicMaterial(new Color(255, 0, 255, 255));
 
-    this.floorTextureOffset = new Vector2(0, 0);
-    this.ceilingTextureOffset = new Vector2(0, 0);
+    this.floorMaterial = material;
+    this.ceilingMaterial = material;
 
-    this.floorTexture = {};
-    this.ceilingTexture = {};
+    this.floorMaterial.addToLevel(this);
+    this.ceilingMaterial.addToLevel(this);
+
+    this.updateTextures = true; //? this property will be accessed by the renderer which will update the loaded textures
   }
 
+  /**
+   * Forces material properties to reload and may occassionally fix material and texture issues
+   */
+  reloadMaterialProperties() {
+    this.materialProperties = [];
+    for (const material of this.materials) {
+      this.materialProperties.push(...material.properties(this));
+    }
+  }
+
+  /**
+   * Updates the material properties for the specified material, used internally by materials.
+   *
+   * @param {*} material
+   */
+  updateMaterialProperties(material) {
+    const materialIndex = this.materials.indexOf(material);
+
+    this.materialProperties.splice(
+      materialIndex * 13,
+      13,
+      ...material.properties(this)
+    );
+  }
+
+  /**
+   * Removes the specified material from the level and unloads any textures that aren't used by other materials.
+   *
+   * @param {*} material
+   */
+  removeMaterial(material) {
+    const texture = material.texture;
+
+    const textureIndex = this.textures.indexOf(texture);
+
+    const materialIndex = this.materials.indexOf(material);
+
+    const textureUsers = this.textureUsers[textureIndex];
+
+    if (materialIndex === -1) return;
+
+    if (textureIndex !== -1 && textureUsers === 1) {
+      this.removeTexture(texture);
+    } else if (textureIndex !== -1) textureUsers[textureIndex]--;
+
+    for (let x = 0; x < this.materials.length; x++) {
+      const material2 = this.materials[x];
+      const materialTextureIndex = material2.getTextureIndex(this);
+      const materialMaterialIndex = this.materials.indexOf(material2);
+      if (materialTextureIndex > textureIndex && textureUsers === 1) {
+        material2.setTextureIndex(this, materialTextureIndex - 1);
+      }
+
+      if (materialMaterialIndex > materialIndex) {
+        material2.setMaterialIndex(this, materialMaterialIndex - 1);
+      }
+    }
+
+    this.materials.splice(materialIndex, 1);
+    this.materialProperties.splice(materialIndex * 13, 13);
+  }
+
+  /**
+   * Removes the specified texture from the level.
+   *
+   * @param {*} texture
+   */
+  removeTexture(texture) {
+    const textureIndex = this.textures.indexOf(texture);
+
+    this.textures.splice(textureIndex, 1);
+    this.textureUsers.splice(textureIndex, 1);
+    this.updateTextures = true;
+  }
+
+  /**
+   * Switches the texture for a specified material.
+   *
+   * @param {*} material
+   * @param {*} texture
+   */
+  switchTexture(material, texture) {
+    const textureIndex = material.getTextureIndex(this);
+    this.textures[textureIndex] = texture;
+    this.updateTextures = true;
+  }
+
+  /**
+   * Adds the specified to the level which means it can be accessed by the renderer. Used internally by materials.
+   *
+   * @param {*} texture
+   * @returns {Number}
+   */
+  addTexture(texture) {
+    if (!texture) {
+      return -1;
+    }
+
+    const textureIndex = this.textures.indexOf(texture);
+
+    //? the exact same texture has already been added.
+    if (textureIndex !== -1) {
+      this.textureUsers[textureIndex]++;
+      return textureIndex;
+    }
+
+    this.textures.push(texture);
+    this.textureUsers.push(1);
+
+    this.updateTextures = true;
+    return this.textures.length - 1; //? index to access the texture
+  }
+
+  /**
+   * Adds the specified material to the level. Used internally by materials.
+   *
+   * @param {*} material
+   * @returns {{}}
+   */
+  addMaterial(material) {
+    const texture = material.texture;
+
+    const materialIndex = this.materials.indexOf(material);
+
+    const textureIndex = this.addTexture(texture);
+
+    if (materialIndex !== -1) return [textureIndex, materialIndex];
+
+    this.materials.push(material);
+    this.materialProperties.push(...[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+    return [textureIndex, this.materials.length - 1];
+  }
+
+  /**
+   * Initializes the grid.
+   */
   #createGrid() {
     for (let x = 0; x < Math.floor(this.width / this.cellSize) + 1; x++) {
       this.grid.push([]);
@@ -64,12 +213,23 @@ class Level {
     }
   }
 
+  /**
+   * Adds a polygon to the grid.
+   *
+   * @param {*} polygon
+   */
   #addPolygonToGrid(polygon) {
     for (let i = 0; i < polygon.segments.length; i++) {
       this.#addLineSegmentToGrid(polygon.segments[i], polygon);
     }
   }
 
+  /**
+   * Adds a LineSegment to the grid, used by addPolygonToGrid.
+   *
+   * @param {*} lineSegment
+   * @param {*} polygon
+   */
   #addLineSegmentToGrid(lineSegment, polygon) {
     this.traverseGrid(
       lineSegment.start,
@@ -211,8 +371,9 @@ class Level {
    */
   get texturesLoaded() {
     for (var polygon of this.polygons) {
-      if (!polygon.texture) continue;
-      if (!polygon.texture.loaded) return false;
+      if (!polygon.material) continue;
+      if (!polygon.material.texture) continue;
+      if (!polygon.material.texture.loaded) return false;
     }
 
     return true;
@@ -228,64 +389,24 @@ class Level {
     return new Vector2(this.width / 2, this.height / 2);
   }
 
-  //? will load the json produced by the toJSON function and create a level from it.
-  static fromJSON(json) {
-    const level = new Level();
-
-    //? loop through all values in the json object and assign the level to it.
-    for (var key in json) {
-      level[key] = json[key];
-    }
-
-    return level;
-  }
-
-  //? will produce json that stores the entire level in it and can be loaded by fromJSON.
-  toJSON() {
-    return {
-      width: this.width,
-      height: this.height,
-      ceilingHeight: this.ceilingHeight,
-      cellSize: this.cellSize,
-      floorTexture: this.floorTexture,
-      floorTextureScale: this.floorTextureScale,
-      floorTextureOffset: this.floorTextureOffset,
-      ceilingTexture: this.ceilingTexture,
-      ceilingTextureScale: this.ceilingTextureScale,
-      ceilingTextureOffset: this.ceilingTextureOffset,
-      walls: this.walls,
-      polygons: this.polygons,
-      sprites: this.sprites,
-      lights: this.lights,
-    };
+  /**
+   * Sets the floor material for the level.
+   *
+   * @param {*} material
+   */
+  setFloorMaterial(material) {
+    material.addToLevel(this);
+    this.floorMaterial = material;
   }
 
   /**
-   * Sets the floor texture of the level. If ignored no floor texture will be set.
+   * Sets the ceiling material for the level.
    *
-   * @param {string} src - Source of the image.
-   * @param {Vector2} [scale=new Vector2(1, 1)] - Scale of the texture.
+   * @param {*} material
    */
-  setFloorTexture(src, scale = new Vector2(1, 1), offset = new Vector2(0, 0)) {
-    this.floorTexture = new TextureLoader(src);
-    this.floorTextureScale = scale; //TODO: implement offset
-    this.floorTextureOffset = offset;
-  }
-
-  /**
-   * Sets the ceiling texture of the level. If ignored no floor texture will be set.
-   *
-   * @param {*} src - Source of the image.
-   * @param {*} [scale=new Vector2(1, 1)] - Scale of the texture.
-   */
-  setCeilingTexture(
-    src,
-    scale = new Vector2(1, 1),
-    offset = new Vector2(0, 0)
-  ) {
-    this.ceilingTexture = new TextureLoader(src);
-    this.ceilingTextureScale = scale;
-    this.ceilingTextureOffset = offset;
+  setCeilingMaterial(material) {
+    material.addToLevel(this);
+    this.ceilingMaterial = material;
   }
 
   /**
@@ -296,23 +417,49 @@ class Level {
    */
   addPolygon(polygon) {
     this.polygons.push(polygon);
+    polygon.material.addToLevel(this);
+    polygon.levels.push(this);
     this.#addPolygonToGrid(polygon, this.polygons.length - 1);
-    //console.log(this.grid);
     return polygon;
   }
 
+  /**
+   * Adds sprite to the level.
+   *
+   * @param {Sprite} sprite
+   * @returns {Sprite}
+   */
   addSprite(sprite) {
+    sprite.levels.push(this);
+    sprite.material.addToLevel(this);
     this.sprites.push(sprite);
     return sprite;
   }
 
+  /**
+   * Removes polygon from the level.
+   *
+   * @param {Polygon} polygon
+   */
   removePolygon(polygon) {
+    const levelIndex = polygon.levels.indexOf(this);
+    polygon.levels.splice(levelIndex, 1);
+    polygon.material.removePolygon(polygon);
     const index = this.polygons.indexOf(polygon);
     if (index > -1) this.polygons.splice(index, 1);
+    //TODO: make sure it gets removed from the grid
     //this.#removePolygonFromGrid(polygon);
   }
 
+  /**
+   * Removes sprite from the level.
+   *
+   * @param {Sprite} sprite
+   */
   removeSprite(sprite) {
+    const levelIndex = sprite.levels.indexOf(this);
+    sprite.levels.splice(levelIndex, 1);
+    sprite.material.removeSprite(sprite);
     const index = this.sprites.indexOf(sprite);
     if (index > -1) this.sprites.splice(index, 1);
   }

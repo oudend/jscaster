@@ -9,6 +9,10 @@ import {
   TextureLoader,
   Ray,
   LineSegment,
+  TextureAtlas,
+  TextureAtlasLoader,
+  BasicMaterial,
+  Color,
 } from "../../src/jscaster.js";
 
 import { degrees_to_radians } from "../../src/utils.js";
@@ -16,8 +20,20 @@ import { mainmenuLevel } from "../levels/simpleShooterLevel.js";
 import Stats from "../../lib/stats.module.js";
 import { SimpleEnemy } from "./simpleEnemy.js";
 
+const renderPass = /*glsl*/ `
+  vec3 gradient = mix(vec3(0.,0.,.7), vec3(.8,.8,.9), resolution.y / 2. / (gl_FragCoord.y) );
+  if(renderType == 2 && false) {
+    //mix( vec4(gradient, 1.), vec4(opacityColor.r, opacityColor.g, opacityColor.b, 1.), opacityColor.a);
+    return vec4(gradient, 1.);
+  }
+
+  return vec4( (mix(vec3(.5,.5,1.), vec3(1.,1.,1.), vec3(min(1., 150./distance)))) * color.rgb, color.a);
+
+  return color;
+`;
+
 const camera = new Camera(new Vector2(800, 300), 180, 90, 100000);
-const renderer = new WebglRenderer(700, 700, camera);
+const renderer = new WebglRenderer(500, 500, camera, mainmenuLevel, renderPass);
 const levelHelper = new LevelHelper(mainmenuLevel, true);
 const rendererHelper = new RendererHelper(renderer, mainmenuLevel, true);
 
@@ -25,7 +41,7 @@ renderer.dom = document.body;
 renderer.canvas.style.width = `${window.innerWidth}px`;
 renderer.canvas.style.height = `${window.innerHeight}px`;
 
-renderer.render(mainmenuLevel);
+renderer.render();
 levelHelper.render();
 rendererHelper.render();
 rendererHelper.canvas.classList.add("minimap");
@@ -61,6 +77,16 @@ const startButton = document.getElementById("startButton");
 const restartButton = document.getElementById("restartButton");
 const exitButton = document.getElementById("exitButton");
 
+var run = false;
+
+function prerender() {
+  renderer.render();
+  rendererHelper.render();
+  if (run === false) requestAnimationFrame(prerender);
+}
+
+requestAnimationFrame(prerender);
+
 startButton.onclick = () => {
   requestAnimationFrame(animate);
   run = true;
@@ -76,52 +102,45 @@ restartButton.onclick = () => {
 exitButton.onclick = () => window.close();
 //? gun setup
 
-//? ememy texture setup
-const enemyTextureLoaderIdle = new TextureLoader("../../assets/enemy/Idle.png");
+var enemyMaterial;
 
-const enemyTextureLoaderHurt1 = new TextureLoader(
-  "../../assets/enemy/Take Hit1.png"
-);
-const enemyTextureLoaderHurt2 = new TextureLoader(
-  "../../assets/enemy/Take Hit2.png"
-);
-const enemyTextureLoaderHurt3 = new TextureLoader(
-  "../../assets/enemy/Take Hit3.png"
-);
-
-const enemyTextureLoaderDeath1 = new TextureLoader(
-  "../../assets/enemy/Death1.png"
-);
-const enemyTextureLoaderDeath2 = new TextureLoader(
-  "../../assets/enemy/Death2.png"
-);
-const enemyTextureLoaderDeath3 = new TextureLoader(
-  "../../assets/enemy/Death3.png"
-);
-
-const enemyTextureLoaderAttack4 = new TextureLoader(
-  "../../assets/enemy/Attack4.png"
-);
-const enemyTextureLoaderAttack5 = new TextureLoader(
-  "../../assets/enemy/Attack5.png"
+const enemyTextureLoader = new TextureAtlasLoader(
+  [
+    "../../assets/enemy/Idle.png",
+    "../../assets/enemy/Take Hit1.png",
+    "../../assets/enemy/Take Hit2.png",
+    "../../assets/enemy/Take Hit3.png",
+    "../../assets/enemy/Death1.png",
+    "../../assets/enemy/Death2.png",
+    "../../assets/enemy/Death3.png",
+    "../../assets/enemy/Attack1.png",
+    "../../assets/enemy/Attack2.png",
+    "../../assets/enemy/Attack3.png",
+    "../../assets/enemy/Attack4.png",
+    "../../assets/enemy/Attack5.png",
+    "../../assets/enemy/Run1.png",
+    "../../assets/enemy/Run2.png",
+  ],
+  100,
+  5,
+  5,
+  () => {
+    //enemyMaterial.setCrop(enemyTextureLoader.crops[0]);
+    enemy.startAnimation("run", true);
+  }
 );
 
-const enemyTextureLoader = new MultiTextureLoader([
-  enemyTextureLoaderIdle,
-  enemyTextureLoaderHurt1,
-  enemyTextureLoaderHurt2,
-  enemyTextureLoaderHurt3,
-  enemyTextureLoaderDeath1,
-  enemyTextureLoaderDeath2,
-  enemyTextureLoaderDeath3,
-  enemyTextureLoaderAttack4,
-  enemyTextureLoaderAttack5,
-]);
-//? ememy texture setup
+enemyMaterial = new BasicMaterial(
+  new Color(255, 0, 50),
+  enemyTextureLoader,
+  undefined,
+  undefined,
+  true
+);
 
 //? enemy setup
 const enemySprite = mainmenuLevel.addSprite(
-  new Sprite(enemyTextureLoader, new Vector2(200, 200), 0, 33, 70, true)
+  new Sprite(enemyMaterial, new Vector2(200, 200), 0, 33, 70, true)
 );
 
 const cameraTarget = {
@@ -143,14 +162,28 @@ const enemy = new SimpleEnemy(
 );
 
 enemy.addAnimation(
-  "took_damage",
+  "run",
   [
-    { duration: 100, animationIndex: 1 },
-    { duration: 205, animationIndex: 2 },
-    { duration: 100, animationIndex: 3 },
-    { duration: 0, animationIndex: 0 },
+    //{ duration: 50, animationIndex: 12 },
+    { duration: 100, animationIndex: 12 },
+    { duration: 0, animationIndex: 13 },
+    { duration: 100, animationIndex: 13 },
   ],
   () => {
+    enemy.startAnimation("run", false);
+  }
+);
+
+enemy.addAnimation(
+  "took_damage",
+  [
+    { duration: 30, animationIndex: 1 },
+    { duration: 60, animationIndex: 2 },
+    { duration: 200, animationIndex: 3 },
+    { duration: 10, animationIndex: 0 },
+  ],
+  () => {
+    enemy.startAnimation("run", true);
     if (!enemy.isDead) enemy.target = cameraTarget;
   }
 );
@@ -168,7 +201,10 @@ enemy.addAnimation(
     enemy.health = 100;
     enemy.isDead = false;
 
-    enemy.sprite.textureLoader.setTextureLoader(0);
+    enemy.startAnimation("run", true);
+    //enemyMaterial.setCrop(enemyTextureLoader.crops[0]);
+
+    //enemy.sprite.textureLoader.setTextureLoader(0);
 
     enemy.sprite.position = new Vector2(
       Math.random() * mainmenuLevel.width,
@@ -182,12 +218,15 @@ enemy.addAnimation(
 enemy.addAnimation(
   "attack",
   [
-    { duration: 100, animationIndex: 7 },
-    { duration: 205, animationIndex: 7 },
-    { duration: 200, animationIndex: 8 },
-    { duration: 0, animationIndex: 0 },
+    { duration: 70, animationIndex: 7 },
+    { duration: 75, animationIndex: 8 },
+    { duration: 70, animationIndex: 9 },
+    { duration: 70, animationIndex: 10 },
+    { duration: 100, animationIndex: 11 },
+    { duration: 10, animationIndex: 0 },
   ],
   () => {
+    enemy.startAnimation("run", true);
     playerHealth -= enemy.damage;
     playerHealthElement.innerText = playerHealth;
     playerDamageScreenStart = Date.now();
@@ -225,8 +264,6 @@ var gunBobMultiplier = 2;
 var gunRecoil = 20;
 //? player parameters
 
-var run = true;
-
 var stats = new Stats();
 stats.showPanel(0);
 document.body.appendChild(stats.dom);
@@ -234,7 +271,7 @@ document.body.appendChild(stats.dom);
 function animate() {
   stats.begin();
   moveCamera();
-  renderer.render(mainmenuLevel);
+  renderer.render();
   rendererHelper.render();
   handleGunAnimations();
   enemy.update();
@@ -259,7 +296,10 @@ function restart() {
   enemy.health = 100;
 
   enemy.cancelAnimation();
-  enemy.sprite.textureLoader.setTextureLoader(0);
+  enemy.startAnimation("run", true);
+  //enemyMaterial.setCrop(enemyTextureLoader.crops[0]);
+
+  //enemy.sprite.textureLoader.setTextureLoader(0);
 
   enemy.target = cameraTarget;
 
@@ -272,7 +312,8 @@ function restart() {
 
 function handleEnemies() {
   if (Vector2.distance(enemy.sprite.position, camera.position) < 16) {
-    if (playerHealth > 0) enemy.startAnimation("attack", false);
+    if (playerHealth > 0 && enemy.currentAnimation !== "attack")
+      enemy.startAnimation("attack", true);
   }
 }
 
@@ -399,9 +440,17 @@ function moveCamera() {
         gunShootImage.style.bottom = `${gunY}px`;
         const ray = new Ray(camera.position, camera.angle, 1000);
 
-        if (
-          Ray.castRay(mainmenuLevel, ray, camera.angle).object == enemySprite
-        ) {
+        const data = Ray.castRay3(
+          mainmenuLevel,
+          ray,
+          camera.angle,
+          undefined,
+          undefined,
+          false,
+          true
+        );
+
+        if (data.closest.sprite === enemySprite) {
           if (enemy.isDead) break;
 
           enemy.target = undefined;

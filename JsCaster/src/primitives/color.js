@@ -9,10 +9,10 @@ class Color {
    * Creates an instance of Color.
    *
    * @constructor
-   * @param {number} r - The red component of the color.
-   * @param {number} g - The green component of the color.
-   * @param {number} b - The blue component of the color.
-   * @param {number} [a=255] - The alpha component of the color.
+   * @param {number} r - The red component of the color(value between 0 and 255).
+   * @param {number} g - The green component of the color(value between 0 and 255).
+   * @param {number} b - The blue component of the color(value between 0 and 255).
+   * @param {number} [a=255] - The alpha component of the color(value between 0 and 255).
    */
   constructor(r, g, b, a = 255) {
     this.r = r;

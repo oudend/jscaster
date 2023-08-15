@@ -26,20 +26,15 @@ class TextureLoader {
   constructor(
     src,
     // polygon,
-    transparent = false,
-    scaleToFit = true,
-    wrap = false,
     repeat = "no-repeat",
     scale = new Vector2(1, 1),
     transform = new Vector2(0, 0),
-    angle = 0
+    angle = 0,
+    onload
   ) {
     this.src = src;
-    this.scaleToFit = scaleToFit;
-    this.wrap = wrap;
+    this.onloads = onload !== undefined ? [onload] : [];
     // this.polygon = polygon;
-
-    this.transparent = transparent;
 
     this.textureImage = undefined;
     this.texture = new Texture(
@@ -63,10 +58,20 @@ class TextureLoader {
     this.loaded = false;
   }
 
+  static fromTexture() {}
+
+  listen(func) {
+    this.onloads.push(func);
+  }
+
   #onload(data) {
-    this.textureImage = data.image;
+    this.textureImage = data.imagedata;
+
+    this.data = data;
 
     this.loaded = true;
+
+    for (var onload of this.onloads) onload(data, this.textureImage);
   }
 }
 

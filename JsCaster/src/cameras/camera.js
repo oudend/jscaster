@@ -18,13 +18,7 @@ class Camera {
    * @param {number} [angle=90] - The 2d angle of the camera in degrees.
    * @param {number} [fov=60] - The Field of View of the camera.
    */
-  constructor(
-    position,
-    angle = 90, //TODO! switch to radians
-    //verticalAngle = 0, //? remove. verticalOffset in renderer instead?
-    fov = 60,
-    far = 10000
-  ) {
+  constructor(position, angle = 90, fov = 60, far = 10000) {
     this.position = position;
 
     this.far = far; //far;
@@ -36,7 +30,7 @@ class Camera {
   }
 
   /**
-   * cast rays from camera.
+   * casts rays from camera. Used internally by the renderer.
    *
    * @param {Level} level
    * @param {Rays} rays
@@ -58,7 +52,7 @@ class Camera {
     const polygons = level.polygons;
     const sprites = level.sprites;
 
-    if (polygons.length === 0) return;
+    if (polygons.length === 0 && sprites.length === 0) return;
 
     for (var i = 0; i < rays; i++) {
       const direction = start + increment * i;
