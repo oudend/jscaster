@@ -20,6 +20,14 @@ import { mainmenuLevel } from "../levels/simpleShooterLevel.js";
 import Stats from "../../lib/stats.module.js";
 import { SimpleEnemy } from "./simpleEnemy.js";
 
+var settings = {
+  resolution: { width: 500, height: 500 },
+  minimap: { size: 200 },
+  rendering: { imageRendering: "crisp-edges" },
+};
+
+var previousSettings = settings;
+
 const renderPass = /*glsl*/ `
   vec3 gradient = mix(vec3(0.,0.,.7), vec3(.8,.8,.9), resolution.y / 2. / (gl_FragCoord.y) );
   if(renderType == 2 && false) {
@@ -46,12 +54,19 @@ levelHelper.render();
 rendererHelper.render();
 rendererHelper.canvas.classList.add("minimap");
 
+rendererHelper.canvas.style.width = "200px";
+rendererHelper.canvas.style.height = "200px";
+
 const gunIdleImage = document.getElementById("gun_idle");
 const gunShootImage = document.getElementById("gun_shoot");
 
 const playerHealthElement = document.getElementById("health");
 const playerDamageScreenElement = document.getElementById("dmgScreen");
 const mainmenuElement = document.getElementById("mainmenu");
+
+const mainMenuButtonContainer = document.getElementById("buttonContainer");
+const mainMenuSettingsContainer = document.getElementById("settingsContainer");
+const mainMenuControlsContainer = document.getElementById("controlsContainer");
 
 //? gun setup
 gunShootImage.style.visibility = "hidden";
@@ -74,8 +89,25 @@ gunShootImage.style.bottom = `${gunY}px`;
 
 //? button setup
 const startButton = document.getElementById("startButton");
+const settingButton = document.getElementById("settingButton");
 const restartButton = document.getElementById("restartButton");
 const exitButton = document.getElementById("exitButton");
+
+const applyButton = document.getElementById("applyButton");
+const backButton = document.getElementById("backButton");
+
+const resolutionWidthSlider = document.getElementById("resolutionWidthSlider");
+const resolutionWidthBox = document.getElementById("resolutionWidthBox");
+
+const resolutionHeightSlider = document.getElementById(
+  "resolutionHeightSlider"
+);
+const resolutionHeightBox = document.getElementById("resolutionHeightBox");
+
+const minimapSizeSlider = document.getElementById("minimapSizeSlider");
+const minimapSizeBox = document.getElementById("minimapSizeBox");
+
+const imageRenderingSelect = document.getElementById("imageRenderingSelect");
 
 var run = false;
 
@@ -87,11 +119,74 @@ function prerender() {
 
 requestAnimationFrame(prerender);
 
+imageRenderingSelect.onchange = () => {
+  settings.rendering.imageRendering = imageRenderingSelect.value;
+  console.log(settings);
+};
+
+minimapSizeSlider.onchange = () => {
+  minimapSizeBox.value = minimapSizeSlider.value;
+  settings.minimap.size = parseInt(minimapSizeSlider.value);
+};
+minimapSizeBox.onchange = () => {
+  minimapSizeSlider.value = minimapSizeBox.value;
+  settings.minimap.size = parseInt(minimapSizeBox.value);
+};
+
+resolutionWidthSlider.onchange = () => {
+  resolutionWidthBox.value = resolutionWidthSlider.value;
+  settings.resolution.width = parseInt(resolutionWidthSlider.value);
+};
+resolutionWidthBox.onchange = () => {
+  resolutionWidthSlider.value = resolutionWidthBox.value;
+  settings.resolution.width = parseInt(resolutionWidthBox.value);
+};
+
+resolutionHeightSlider.onchange = () => {
+  resolutionHeightBox.value = resolutionHeightSlider.value;
+  settings.resolution.height = parseInt(resolutionHeightSlider.value);
+};
+resolutionHeightBox.onchange = () => {
+  resolutionHeightSlider.value = resolutionHeightBox.value;
+  settings.resolution.height = parseInt(resolutionHeightBox.value);
+};
+
 startButton.onclick = () => {
   requestAnimationFrame(animate);
   run = true;
   startButton.innerText = "CONTINUE";
   mainmenuElement.style.visibility = "hidden";
+};
+settingButton.onclick = () => {
+  mainMenuButtonContainer.style.visibility = "hidden";
+  mainMenuControlsContainer.style.visibility = "hidden";
+  mainMenuSettingsContainer.style.visibility = "inherit";
+};
+backButton.onclick = () => {
+  mainMenuSettingsContainer.style.visibility = "hidden";
+  mainMenuButtonContainer.style.visibility = "inherit";
+  mainMenuControlsContainer.style.visibility = "inherit";
+
+  settings = previousSettings;
+};
+applyButton.onclick = () => {
+  mainMenuSettingsContainer.style.visibility = "hidden";
+  mainMenuButtonContainer.style.visibility = "inherit";
+  mainMenuControlsContainer.style.visibility = "inherit";
+  previousSettings = settings;
+
+  // renderer.width = parseInt(resolutionWidthBox.value);
+  // renderer.height = parseInt(resolutionHeightBox.value);
+
+  renderer.setDimensions(
+    parseInt(settings.resolution.width),
+    parseInt(settings.resolution.width)
+  );
+
+  rendererHelper.canvas.style.width = `${settings.minimap.size}px`;
+  rendererHelper.canvas.style.height = `${settings.minimap.size}px`;
+
+  renderer.canvas.style.imageRendering = settings.rendering.imageRendering;
 };
 restartButton.onclick = () => {
   requestAnimationFrame(animate);

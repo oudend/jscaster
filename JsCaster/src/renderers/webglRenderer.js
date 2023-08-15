@@ -104,6 +104,19 @@ class WebglRenderer {
     // );
   }
 
+  setDimensions(width, height) {
+    this.resolution = width;
+    this.width = width;
+    this.height = height;
+    this.canvas.width = width;
+    this.canvas.height = height;
+
+    this.gl.canvas.width = width;
+    this.gl.canvas.height = height;
+
+    this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
+  }
+
   setRenderPass(renderPass) {
     this.renderPass = renderPass;
   }
